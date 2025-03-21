@@ -1,0 +1,5 @@
+{
+    "data_path": "data/sample.csv",
+    "output_path": "outputs/",
+    "model_path": "models/"
+}
