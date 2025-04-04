@@ -1,42 +1,48 @@
 import pandas as pd
 import numpy as np
 import matplotlib
-matplotlib.use('Agg')  # Set non-interactive backend
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+from sklearn.linear_model import LogisticRegression
+from sklearn.cluster import KMeans
+from sklearn.metrics import (accuracy_score, classification_report, 
+                           confusion_matrix, roc_curve, auc, RocCurveDisplay)
 import customtkinter as ctk
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import sys
 import gc
+from sklearn.preprocessing import StandardScaler
 
-# Configure seaborn
+# Set the style for seaborn
 sns.set_style("whitegrid")
 
 class DiabetesPredictorApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Diabetes Prediction Dashboard")
-        self.root.geometry("1400x1000")
+        self.root.geometry("1400x1000") 
         
         # Initialize variables
         self.current_figure = None
         self.canvas = None
         self.content_frame = None
         self.theme_mode = "light"
-        self._after_ids = []  # Track pending after events
+        self._after_ids = []  # Store after IDs for cleanup
         
-        # Configure appearance
         ctk.set_appearance_mode(self.theme_mode)
         ctk.set_default_color_theme("blue")
         
         # Load data
         self.load_data()
         
-        # Train model
-        self.train_model()
+        # Train models
+        self.train_models()
+        
+        # Perform clustering
+        self.perform_clustering()
         
         # Setup UI
         self.setup_ui()
@@ -60,23 +66,67 @@ class DiabetesPredictorApp:
                 'Outcome': 'Outcome'
             }, inplace=True)
             self.df.fillna(self.df.mean(), inplace=True)
+            
+            # Store basic stats for display
+            self.data_stats = {
+                'head': self.df.head(),
+                'describe': self.df.describe(),
+                'info': self.df.info(),
+                'null_counts': self.df.isnull().sum()
+            }
         except Exception as e:
             print(f"Error loading data: {e}")
             sys.exit(1)
 
-    def train_model(self):
-        """Train the machine learning model"""
+    def train_models(self):
+        """Train machine learning models"""
         try:
             features = self.df.drop(columns=['Outcome'])
             target = self.df['Outcome']
             self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(
                 features, target, test_size=0.2, random_state=42)
             
-            self.model = RandomForestClassifier(n_estimators=100, random_state=42)
-            self.model.fit(self.X_train, self.y_train)
-            self.y_pred = self.model.predict(self.X_test)
+            # Random Forest
+            self.rf_model = RandomForestClassifier(n_estimators=100, random_state=42)
+            self.rf_model.fit(self.X_train, self.y_train)
+            self.rf_pred = self.rf_model.predict(self.X_test)
+            self.rf_probs = self.rf_model.predict_proba(self.X_test)[:, 1]
+            
+            # Logistic Regression
+            self.lr_model = LogisticRegression(max_iter=1000, random_state=42)
+            self.lr_model.fit(self.X_train, self.y_train)
+            self.lr_pred = self.lr_model.predict(self.X_test)
+            self.lr_probs = self.lr_model.predict_proba(self.X_test)[:, 1]
+            
+            # Store feature importance
+            self.feature_importance = pd.DataFrame({
+                'Feature': features.columns,
+                'Importance': self.rf_model.feature_importances_
+            }).sort_values('Importance', ascending=False)
+            
         except Exception as e:
-            print(f"Error training model: {e}")
+            print(f"Error training models: {e}")
+            sys.exit(1)
+
+    def perform_clustering(self):
+        """Perform clustering analysis"""
+        try:
+            # Select features for clustering
+            cluster_features = self.df[['Glucose', 'BMI', 'Age']]
+            
+            # Standardize features
+            scaler = StandardScaler()
+            scaled_features = scaler.fit_transform(cluster_features)
+            
+            # KMeans clustering
+            kmeans = KMeans(n_clusters=3, random_state=42)
+            self.df['Cluster'] = kmeans.fit_predict(scaled_features)
+            
+            # Store cluster centers
+            self.cluster_centers = scaler.inverse_transform(kmeans.cluster_centers_)
+            
+        except Exception as e:
+            print(f"Error in clustering: {e}")
             sys.exit(1)
 
     def setup_ui(self):
@@ -107,14 +157,18 @@ class DiabetesPredictorApp:
         
         # Add tabs
         self.tabs = {
+            "Data Overview": self.tabview.add("Data Overview"),
             "Correlation": self.tabview.add("Correlation"),
+            "Clustering": self.tabview.add("Clustering"),
+            "Model Comparison": self.tabview.add("Model Comparison"),
             "Performance": self.tabview.add("Performance"),
             "Confusion": self.tabview.add("Confusion"),
-            "Features": self.tabview.add("Features")
+            "Features": self.tabview.add("Features"),
+            "Conclusions": self.tabview.add("Conclusions")
         }
         
         # Initialize first tab
-        self.safe_update_tab("Correlation")
+        self.safe_update_tab("Data Overview")
         
         # Bind tab change
         self.tabview.configure(command=lambda: self.on_tab_change())
@@ -164,14 +218,22 @@ class DiabetesPredictorApp:
             self.content_frame = ctk.CTkFrame(self.tabs[tab_name])
             self.content_frame.pack(fill="both", expand=True, padx=20, pady=20)
             
-            if tab_name == "Correlation":
+            if tab_name == "Data Overview":
+                self.show_data_overview()
+            elif tab_name == "Correlation":
                 self.show_correlation()
+            elif tab_name == "Clustering":
+                self.show_clustering()
+            elif tab_name == "Model Comparison":
+                self.show_model_comparison()
             elif tab_name == "Performance":
                 self.show_performance()
             elif tab_name == "Confusion":
                 self.show_confusion_matrix()
             elif tab_name == "Features":
                 self.show_feature_importance()
+            elif tab_name == "Conclusions":
+                self.show_conclusions()
                 
         except Exception as e:
             print(f"Error updating tab {tab_name}: {e}")
@@ -212,22 +274,95 @@ class DiabetesPredictorApp:
         # Force garbage collection
         gc.collect()
 
-    def show_correlation(self):
-        """Display correlation heatmap"""
+    def show_data_overview(self):
+        """Display data overview with statistics and distributions"""
         if not self.content_frame.winfo_exists():
             return
             
         try:
+            main_frame = ctk.CTkScrollableFrame(self.content_frame)
+            main_frame.pack(fill="both", expand=True, padx=20, pady=20)
+            
+            # Basic stats
+            stats_frame = ctk.CTkFrame(main_frame, border_width=2, corner_radius=12)
+            stats_frame.pack(fill="x", padx=10, pady=10, ipady=10)
+            
+            ctk.CTkLabel(stats_frame, text="BASIC STATISTICS", 
+                        font=("Arial", 16, "bold")).pack(pady=(10,5))
+            
+            # Create distribution plots
+            columns_to_plot = [col for col in self.df.columns if col not in ['Outcome', 'Cluster']]
+            num_plots = len(columns_to_plot)
+            
+            # Calculate grid size (3 columns)
+            rows = (num_plots + 2) // 3  # Round up division
+            cols = 3
+            
+            self.current_figure = plt.Figure(figsize=(12, 4*rows))  # Adjust height based on rows
+            axes = self.current_figure.subplots(rows, cols)
+            self.current_figure.tight_layout(pad=4.0)
+            
+            # Flatten axes array if needed
+            if rows > 1:
+                axes = axes.flatten()
+            
+            for i, col in enumerate(columns_to_plot):
+                sns.histplot(data=self.df, x=col, kde=True, ax=axes[i])
+                axes[i].set_title(f"{col} Distribution", fontsize=10)
+                axes[i].set_xlabel("")
+            
+            # Turn off any empty subplots
+            for j in range(i+1, rows*cols):
+                axes[j].axis('off')
+            
+            if self.content_frame.winfo_exists():
+                self.canvas = FigureCanvasTkAgg(self.current_figure, master=main_frame)
+                self.canvas.draw()
+                self.canvas.get_tk_widget().pack(fill="both", expand=True, padx=15, pady=15)
+            
+        except Exception as e:
+            print(f"Error showing data overview: {e}")
+            self.cleanup_previous_tab()
+
+    def show_correlation(self):
+        """Display correlation heatmap with hypotheses"""
+        if not self.content_frame.winfo_exists():
+            return
+            
+        try:
+            # Create main frame with scroll
+            main_frame = ctk.CTkScrollableFrame(self.content_frame)
+            main_frame.pack(fill="both", expand=True, padx=20, pady=20)
+            
+            # Hypotheses frame
+            hypotheses_frame = ctk.CTkFrame(main_frame, border_width=2, corner_radius=12)
+            hypotheses_frame.pack(fill="x", padx=10, pady=10)
+            
+            ctk.CTkLabel(hypotheses_frame, text="HYPOTHESES", 
+                        font=("Arial", 16, "bold")).pack(pady=(10,5))
+            
+            hypotheses = [
+                "1. Higher glucose levels correlate with higher diabetes risk",
+                "2. BMI is positively correlated with diabetes risk",
+                "3. Age is a significant factor in diabetes risk",
+                "4. Blood pressure shows weaker correlation than other factors"
+            ]
+            
+            for hypo in hypotheses:
+                ctk.CTkLabel(hypotheses_frame, text=hypo, 
+                            font=("Arial", 12), anchor="w").pack(fill="x", padx=20, pady=2)
+            
+            # Correlation plot
+            plot_frame = ctk.CTkFrame(main_frame)
+            plot_frame.pack(fill="both", expand=True, padx=10, pady=10)
+            
             self.current_figure = plt.Figure(figsize=(11, 9))
             ax = self.current_figure.add_subplot(111)
             
             corr = self.df.corr()
-            
-            # Create mask only for upper triangle (excluding diagonal)
             mask = np.zeros_like(corr, dtype=bool)
             mask[np.triu_indices_from(mask, k=1)] = True
             
-            # Create heatmap
             sns.heatmap(
                 corr, 
                 annot=True, 
@@ -238,31 +373,15 @@ class DiabetesPredictorApp:
                 square=True,
                 ax=ax, 
                 mask=mask,
-                annot_kws={
-                    "size": 10,
-                    "ha": "center",
-                    "va": "center"
-                },
-                cbar_kws={
-                    "shrink": 0.8,
-                    "label": "Correlation Coefficient"
-                }
+                annot_kws={"size": 10},
+                cbar_kws={"shrink": 0.8}
             )
             
-            # Highlight Outcome column
-            outcome_idx = list(corr.columns).index('Outcome')
-            for i in range(len(corr.columns)):
-                if i != outcome_idx:
-                    ax.text(outcome_idx + 0.5, i + 0.5, f"{corr.iloc[i, outcome_idx]:.2f}",
-                           ha="center", va="center", fontsize=10, 
-                           bbox=dict(facecolor='white', alpha=0.7, edgecolor='none'))
-            
-            # Improve labels
+            ax.set_title("Feature Correlations with Diabetes Outcome", fontsize=14, pad=20)
             ax.set_xticklabels(
                 corr.columns,
                 rotation=45,
                 ha='right',
-                rotation_mode='anchor',
                 fontsize=11
             )
             ax.set_yticklabels(
@@ -271,23 +390,176 @@ class DiabetesPredictorApp:
                 fontsize=11
             )
             
-            ax.set_title(
-                "Feature Correlations with Diabetes Outcome\n" +
-                "(Lower triangle shows correlations with Outcome)",
-                fontsize=14,
-                pad=20
-            )
-            
-            self.current_figure.tight_layout()
-            
-            # Create canvas only if frame still exists
-            if self.content_frame.winfo_exists():
-                self.canvas = FigureCanvasTkAgg(self.current_figure, master=self.content_frame)
+            if plot_frame.winfo_exists():
+                self.canvas = FigureCanvasTkAgg(self.current_figure, master=plot_frame)
                 self.canvas.draw()
                 self.canvas.get_tk_widget().pack(fill="both", expand=True, padx=15, pady=15)
             
         except Exception as e:
             print(f"Error showing correlation: {e}")
+            self.cleanup_previous_tab()
+
+    def show_clustering(self):
+        """Display clustering results"""
+        if not self.content_frame.winfo_exists():
+            return
+            
+        try:
+            main_frame = ctk.CTkScrollableFrame(self.content_frame)
+            main_frame.pack(fill="both", expand=True, padx=20, pady=20)
+            
+            # Cluster info frame
+            info_frame = ctk.CTkFrame(main_frame, border_width=2, corner_radius=12)
+            info_frame.pack(fill="x", padx=10, pady=10)
+            
+            ctk.CTkLabel(info_frame, text="CLUSTER ANALYSIS", 
+                        font=("Arial", 16, "bold")).pack(pady=(10,5))
+            
+            # Cluster scatter plot
+            self.current_figure = plt.Figure(figsize=(12, 10))
+            axes = self.current_figure.subplots(2, 2)
+            
+            # Cluster scatter plot
+            ax = axes[0, 0]
+            sns.scatterplot(
+                data=self.df, 
+                x='Glucose', 
+                y='BMI', 
+                hue='Cluster', 
+                palette='viridis', 
+                ax=ax
+            )
+            ax.set_title("Glucose vs BMI by Cluster")
+            
+            # Cluster centers
+            ax = axes[0, 1]
+            centers_df = pd.DataFrame(
+                self.cluster_centers, 
+                columns=['Glucose', 'BMI', 'Age']
+            )
+            centers_df['Cluster'] = range(3)
+            sns.barplot(
+                data=centers_df.melt(id_vars='Cluster'), 
+                x='Cluster', 
+                y='value', 
+                hue='variable',
+                ax=ax
+            )
+            ax.set_title("Cluster Centers (Standardized)")
+            ax.legend(title='Feature')
+            
+            # Outcome by cluster
+            ax = axes[1, 0]
+            cluster_outcome = self.df.groupby('Cluster')['Outcome'].mean().reset_index()
+            sns.barplot(
+                data=cluster_outcome, 
+                x='Cluster', 
+                y='Outcome', 
+                ax=ax
+            )
+            ax.set_title("Diabetes Prevalence by Cluster")
+            ax.set_ylabel("Diabetes Rate")
+            
+            # Age distribution by cluster
+            ax = axes[1, 1]
+            sns.boxplot(
+                data=self.df, 
+                x='Cluster', 
+                y='Age', 
+                ax=ax
+            )
+            ax.set_title("Age Distribution by Cluster")
+            
+            self.current_figure.tight_layout()
+            
+            if main_frame.winfo_exists():
+                self.canvas = FigureCanvasTkAgg(self.current_figure, master=main_frame)
+                self.canvas.draw()
+                self.canvas.get_tk_widget().pack(fill="both", expand=True, padx=15, pady=15)
+            
+        except Exception as e:
+            print(f"Error showing clustering: {e}")
+            self.cleanup_previous_tab()
+
+    def show_model_comparison(self):
+        """Compare model performance"""
+        if not self.content_frame.winfo_exists():
+            return
+            
+        try:
+            main_frame = ctk.CTkScrollableFrame(self.content_frame)
+            main_frame.pack(fill="both", expand=True, padx=20, pady=20)
+            
+            # Model comparison frame
+            compare_frame = ctk.CTkFrame(main_frame, border_width=2, corner_radius=12)
+            compare_frame.pack(fill="x", padx=10, pady=10)
+            
+            ctk.CTkLabel(compare_frame, text="MODEL COMPARISON", 
+                        font=("Arial", 16, "bold")).pack(pady=(10,5))
+            
+            # Calculate metrics
+            rf_accuracy = accuracy_score(self.y_test, self.rf_pred)
+            lr_accuracy = accuracy_score(self.y_test, self.lr_pred)
+            
+            # Create comparison table
+            metrics = ['Accuracy', 'Precision', 'Recall', 'F1-Score']
+            rf_metrics = [
+                rf_accuracy,
+                classification_report(self.y_test, self.rf_pred, output_dict=True)['1']['precision'],
+                classification_report(self.y_test, self.rf_pred, output_dict=True)['1']['recall'],
+                classification_report(self.y_test, self.rf_pred, output_dict=True)['1']['f1-score']
+            ]
+            
+            lr_metrics = [
+                lr_accuracy,
+                classification_report(self.y_test, self.lr_pred, output_dict=True)['1']['precision'],
+                classification_report(self.y_test, self.lr_pred, output_dict=True)['1']['recall'],
+                classification_report(self.y_test, self.lr_pred, output_dict=True)['1']['f1-score']
+            ]
+            
+            for i, metric in enumerate(metrics):
+                metric_frame = ctk.CTkFrame(compare_frame)
+                metric_frame.pack(fill="x", padx=20, pady=5)
+                
+                ctk.CTkLabel(metric_frame, text=metric, 
+                            font=("Arial", 14), width=120, anchor="w").pack(side="left")
+                
+                ctk.CTkLabel(metric_frame, text=f"RF: {rf_metrics[i]:.3f}", 
+                            font=("Arial", 14), width=120).pack(side="left", padx=20)
+                
+                ctk.CTkLabel(metric_frame, text=f"LR: {lr_metrics[i]:.3f}", 
+                            font=("Arial", 14), width=120).pack(side="left")
+            
+            # ROC curves
+            plot_frame = ctk.CTkFrame(main_frame)
+            plot_frame.pack(fill="both", expand=True, padx=10, pady=10)
+            
+            self.current_figure = plt.Figure(figsize=(10, 6))
+            ax = self.current_figure.add_subplot(111)
+            
+            # Calculate ROC curves
+            fpr_rf, tpr_rf, _ = roc_curve(self.y_test, self.rf_probs)
+            roc_auc_rf = auc(fpr_rf, tpr_rf)
+            
+            fpr_lr, tpr_lr, _ = roc_curve(self.y_test, self.lr_probs)
+            roc_auc_lr = auc(fpr_lr, tpr_lr)
+            
+            # Plot ROC curves
+            ax.plot(fpr_rf, tpr_rf, label=f'Random Forest (AUC = {roc_auc_rf:.2f})')
+            ax.plot(fpr_lr, tpr_lr, label=f'Logistic Regression (AUC = {roc_auc_lr:.2f})')
+            ax.plot([0, 1], [0, 1], 'k--')
+            ax.set_xlabel('False Positive Rate')
+            ax.set_ylabel('True Positive Rate')
+            ax.set_title('ROC Curve Comparison')
+            ax.legend(loc='lower right')
+            
+            if plot_frame.winfo_exists():
+                self.canvas = FigureCanvasTkAgg(self.current_figure, master=plot_frame)
+                self.canvas.draw()
+                self.canvas.get_tk_widget().pack(fill="both", expand=True, padx=15, pady=15)
+            
+        except Exception as e:
+            print(f"Error showing model comparison: {e}")
             self.cleanup_previous_tab()
 
     def show_performance(self):
@@ -296,9 +568,6 @@ class DiabetesPredictorApp:
             return
             
         try:
-            accuracy = accuracy_score(self.y_test, self.y_pred)
-            report = classification_report(self.y_test, self.y_pred, output_dict=True)
-            
             main_frame = ctk.CTkScrollableFrame(self.content_frame)
             main_frame.pack(fill="both", expand=True, padx=20, pady=20)
             
@@ -307,7 +576,8 @@ class DiabetesPredictorApp:
                                     border_color="#4e8cff", fg_color=("#f0f0f0", "#2b2b2b"))
             acc_frame.pack(fill="x", padx=10, pady=10, ipady=15)
             
-            ctk.CTkLabel(acc_frame, text="MODEL ACCURACY", 
+            accuracy = accuracy_score(self.y_test, self.rf_pred)
+            ctk.CTkLabel(acc_frame, text="RANDOM FOREST PERFORMANCE", 
                         font=("Arial", 16, "bold")).pack(pady=(5,0))
             ctk.CTkLabel(acc_frame, text=f"{accuracy*100:.2f}%", 
                         font=("Arial", 32, "bold"), 
@@ -320,15 +590,16 @@ class DiabetesPredictorApp:
             ctk.CTkLabel(metrics_frame, text="CLASSIFICATION METRICS", 
                         font=("Arial", 16, "bold")).pack(pady=(10,5))
             
-            # Create a grid for metrics
-            for i, (label, metric) in enumerate(report['1'].items()):
+            report = classification_report(self.y_test, self.rf_pred, output_dict=True)
+            
+            for label, metric in report['1'].items():
                 if label in ['precision', 'recall', 'f1-score']:
                     metric_frame = ctk.CTkFrame(metrics_frame)
                     metric_frame.pack(fill="x", padx=20, pady=5)
                     
                     ctk.CTkLabel(metric_frame, text=label.title(), 
                                 font=("Arial", 14), width=120, anchor="w").pack(side="left")
-                    ctk.CTkLabel(metric_frame, text=f"{metric:.2f}", 
+                    ctk.CTkLabel(metric_frame, text=f"{metric:.3f}", 
                                 font=("Arial", 14, "bold")).pack(side="right")
             
         except Exception as e:
@@ -341,21 +612,24 @@ class DiabetesPredictorApp:
             return
             
         try:
+            main_frame = ctk.CTkFrame(self.content_frame)
+            main_frame.pack(fill="both", expand=True, padx=20, pady=20)
+            
             self.current_figure = plt.Figure(figsize=(8, 6))
             ax = self.current_figure.add_subplot(111)
             
-            cm = confusion_matrix(self.y_test, self.y_pred)
+            cm = confusion_matrix(self.y_test, self.rf_pred)
             sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", 
                        xticklabels=["No Diabetes", "Diabetes"], 
                        yticklabels=["No Diabetes", "Diabetes"], 
                        ax=ax, annot_kws={"size": 16})
             
-            ax.set_title("Confusion Matrix", fontsize=16, pad=20)
+            ax.set_title("Random Forest Confusion Matrix", fontsize=16, pad=20)
             ax.set_xlabel("Predicted", fontsize=14)
             ax.set_ylabel("Actual", fontsize=14)
             
-            if self.content_frame.winfo_exists():
-                self.canvas = FigureCanvasTkAgg(self.current_figure, master=self.content_frame)
+            if main_frame.winfo_exists():
+                self.canvas = FigureCanvasTkAgg(self.current_figure, master=main_frame)
                 self.canvas.draw()
                 self.canvas.get_tk_widget().pack(fill="both", expand=True, padx=20, pady=20)
             
@@ -369,26 +643,102 @@ class DiabetesPredictorApp:
             return
             
         try:
+            main_frame = ctk.CTkScrollableFrame(self.content_frame)
+            main_frame.pack(fill="both", expand=True, padx=20, pady=20)
+            
+            # Feature importance plot
+            plot_frame = ctk.CTkFrame(main_frame)
+            plot_frame.pack(fill="both", expand=True, padx=10, pady=10)
+            
             self.current_figure = plt.Figure(figsize=(10, 6))
             ax = self.current_figure.add_subplot(111)
             
-            importance = self.model.feature_importances_
-            features = self.df.drop(columns=['Outcome']).columns
-            
-            sns.barplot(x=importance, y=features, color="#4e8cff", ax=ax)
-            ax.set_title("Feature Importance Scores", fontsize=16, pad=20)
+            sns.barplot(
+                data=self.feature_importance, 
+                x='Importance', 
+                y='Feature', 
+                color="#4e8cff", 
+                ax=ax
+            )
+            ax.set_title("Random Forest Feature Importance", fontsize=16, pad=20)
             ax.set_xlabel("Importance Score", fontsize=14)
             ax.set_ylabel("Features", fontsize=14)
             
-            self.current_figure.tight_layout()
-            
-            if self.content_frame.winfo_exists():
-                self.canvas = FigureCanvasTkAgg(self.current_figure, master=self.content_frame)
+            if plot_frame.winfo_exists():
+                self.canvas = FigureCanvasTkAgg(self.current_figure, master=plot_frame)
                 self.canvas.draw()
-                self.canvas.get_tk_widget().pack(fill="both", expand=True, padx=20, pady=20)
+                self.canvas.get_tk_widget().pack(fill="both", expand=True, padx=15, pady=15)
+            
+            # Feature descriptions
+            desc_frame = ctk.CTkFrame(main_frame, border_width=2, corner_radius=12)
+            desc_frame.pack(fill="x", padx=10, pady=10)
+            
+            ctk.CTkLabel(desc_frame, text="KEY FEATURE INSIGHTS", 
+                        font=("Arial", 16, "bold")).pack(pady=(10,5))
+            
+            insights = [
+                "• Glucose is the most important predictor of diabetes",
+                "• BMI and Age are significant secondary factors",
+                "• Diabetes Pedigree Function captures genetic risk",
+                "• Blood Pressure has relatively low importance"
+            ]
+            
+            for insight in insights:
+                ctk.CTkLabel(desc_frame, text=insight, 
+                            font=("Arial", 12), anchor="w").pack(fill="x", padx=20, pady=2)
             
         except Exception as e:
             print(f"Error showing feature importance: {e}")
+            self.cleanup_previous_tab()
+
+    def show_conclusions(self):
+        """Display conclusions and recommendations"""
+        if not self.content_frame.winfo_exists():
+            return
+            
+        try:
+            main_frame = ctk.CTkScrollableFrame(self.content_frame)
+            main_frame.pack(fill="both", expand=True, padx=20, pady=20)
+            
+            # Conclusions frame
+            conclusions_frame = ctk.CTkFrame(main_frame, border_width=2, corner_radius=12)
+            conclusions_frame.pack(fill="x", padx=10, pady=10)
+            
+            ctk.CTkLabel(conclusions_frame, text="CONCLUSIONS", 
+                        font=("Arial", 16, "bold")).pack(pady=(10,5))
+            accuracy = accuracy_score(self.y_test, self.rf_pred) * 100
+            conclusions = [
+                f"1. Random Forest achieved {accuracy:.2f}% accuracy",
+                "2. Glucose levels are the strongest predictor of diabetes",
+                "3. Clustering revealed distinct patient groups with different risk profiles",
+                "4. The model could be improved with more clinical features",
+                "5. Early intervention for high-Glucose patients is recommended"
+            ]
+            
+            for conc in conclusions:
+                ctk.CTkLabel(conclusions_frame, text=conc, 
+                            font=("Arial", 12), anchor="w").pack(fill="x", padx=20, pady=5)
+            
+            # Recommendations frame
+            rec_frame = ctk.CTkFrame(main_frame, border_width=2, corner_radius=12)
+            rec_frame.pack(fill="x", padx=10, pady=10)
+            
+            ctk.CTkLabel(rec_frame, text="RECOMMENDATIONS", 
+                        font=("Arial", 16, "bold")).pack(pady=(10,5))
+            
+            recommendations = [
+                "• Collect more data on patient lifestyle factors",
+                "• Include HbA1c measurements for better glucose monitoring",
+                "• Develop a risk score calculator based on the top features",
+                "• Consider ensemble methods to further improve accuracy"
+            ]
+            
+            for rec in recommendations:
+                ctk.CTkLabel(rec_frame, text=rec, 
+                            font=("Arial", 12), anchor="w").pack(fill="x", padx=20, pady=2)
+            
+        except Exception as e:
+            print(f"Error showing conclusions: {e}")
             self.cleanup_previous_tab()
 
     def on_close(self):
@@ -429,19 +779,7 @@ def main():
         root.protocol("WM_DELETE_WINDOW", on_closing)
         
         app = DiabetesPredictorApp(root)
-        
-        # Run with error handling
-        while True:
-            try:
-                root.mainloop()
-                break
-            except KeyboardInterrupt:
-                break
-            except Exception as e:
-                print(f"Unexpected error: {e}")
-                if 'app' in locals():
-                    app.on_close()
-                break
+        root.mainloop()
                 
     except Exception as e:
         print(f"Application startup error: {e}")
