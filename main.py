@@ -120,11 +120,9 @@ class DiabetesPredictorApp:
         # A dark theme button!
         self.theme_button = ctk.CTkButton(self.header_frame, text="🌙 Dark Mode" if self.theme_mode == "light" else "☀️ Light Mode", command=self.toggle_theme, width=140, height=40, font=("Arial", 14))
         self.theme_button.pack(side="right", padx=25)
-        
         # This is the tabview where we put all of the tabs
         self.tabview = ctk.CTkTabview(self.root, width=1300, height=850)
-        self.tabview.pack(pady=(0, 30), padx=30, fill="both", expand=True)
-        
+        self.tabview.pack(pady=(0, 30), padx=30, fill="both", expand=True)    
         # That's how we create the tabs
         self.tabs = {
             "Data Overview": self.tabview.add("Data Overview"),
