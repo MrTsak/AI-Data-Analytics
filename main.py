@@ -534,22 +534,31 @@ class DiabetesPredictorApp:
                 self.canvas = FigureCanvasTkAgg(self.current_figure, master=plot_frame)
                 self.canvas.draw()
                 self.canvas.get_tk_widget().pack(fill="both", expand=True, padx=15, pady=15)
-            
             # Insights frame
             desc_frame = ctk.CTkFrame(main_frame, border_width=2, corner_radius=12)
             desc_frame.pack(fill="x", padx=10, pady=10)
             
             ctk.CTkLabel(desc_frame, text="KEY FEATURE INSIGHTS", 
                         font=("Arial", 16, "bold")).pack(pady=(10,5))
-            # These are some insights I found after running the model and searching on the internet to comfirm them
+            # These are some insights I found after running the model and searching on the internet to confirm them
             insights = [
-                "• Glucose is the most important predictor of diabetes",
-                "• BMI and Age are significant secondary factors",
-                "• Diabetes Pedigree Function captures genetic risk",
-                "• Blood Pressure has relatively low importance"
+                ("• Glucose is the most important predictor of diabetes", 
+                 "https://bmcendocrdisord.biomedcentral.com/articles/10.1186/s12902-019-0436-6"),
+                ("• BMI and Age are significant secondary factors", 
+                 "https://www.who.int/news-room/fact-sheets/detail/diabetes"),
+                ("• Diabetes Pedigree Function captures genetic risk", 
+                 "https://medlineplus.gov/genetics/condition/type-2-diabetes/"),
             ]
-            for insight in insights:
-                ctk.CTkLabel(desc_frame, text=insight, font=("Arial", 12), anchor="w").pack(fill="x", padx=20, pady=2)
+            for insight_text, url in insights:
+                # Create frame for each insight to hold text and link
+                insight_frame = ctk.CTkFrame(desc_frame, fg_color="transparent")
+                insight_frame.pack(fill="x", padx=20, pady=2)
+                # Insight text
+                ctk.CTkLabel(insight_frame, text=insight_text, font=("Arial", 12), anchor="w").pack(side="left")
+                # Link label for the source
+                source_label = ctk.CTkLabel(insight_frame, text="[source]", font=("Arial", 12, "underline"), text_color="#1E90FF", cursor="hand2")
+                source_label.pack(side="left", padx=(5, 0))
+                source_label.bind("<Button-1>", lambda e, url=url: webbrowser.open_new(url))
             
         except Exception as e:
             print(f"Error showing feature importance: {e}")
