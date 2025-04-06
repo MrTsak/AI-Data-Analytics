@@ -15,7 +15,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import (accuracy_score, classification_report, confusion_matrix, roc_curve, auc, RocCurveDisplay)
-matplotlib.use('Agg') #This is for backend
+matplotlib.use('Agg')
 
 sns.set_style("whitegrid")
 
@@ -73,19 +73,15 @@ class DiabetesPredictorApp:
             features = self.df.drop(columns=['Outcome'])
             target = self.df['Outcome']
             self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(features, target, test_size=0.2, random_state=42)
-            
-            # Random Forest Classifier
             self.rf_model = RandomForestClassifier(n_estimators=100, random_state=42)
             self.rf_model.fit(self.X_train, self.y_train)
             self.rf_pred = self.rf_model.predict(self.X_test)
             self.rf_probs = self.rf_model.predict_proba(self.X_test)[:, 1]
-            
             # Logistic Regression Classifier
             self.lr_model = LogisticRegression(max_iter=1000, random_state=42)
             self.lr_model.fit(self.X_train, self.y_train)
             self.lr_pred = self.lr_model.predict(self.X_test)
             self.lr_probs = self.lr_model.predict_proba(self.X_test)[:, 1]
-            
             # Feature importance from Random Forest model
             self.feature_importance = pd.DataFrame({'Feature': features.columns,'Importance': self.rf_model.feature_importances_}).sort_values('Importance', ascending=False)
             # We use excepts for error handling in most of the functions
@@ -112,7 +108,6 @@ class DiabetesPredictorApp:
             sys.exit(1)
 
     def setup_ui(self):
-        #This is the UI setup
         # Setting up the main window, title etc.
         self.header_frame = ctk.CTkFrame(self.root, height=80)
         self.header_frame.pack(fill="x", padx=30, pady=(30, 20))
@@ -204,8 +199,7 @@ class DiabetesPredictorApp:
                 self.root.after_cancel(after_id)
             except:
                 pass
-        self._after_ids = []
-        
+        self._after_ids = []  
         # This makes sure that everything is cleaned as well as the memory
         try:
             if self.canvas and self.canvas.get_tk_widget().winfo_exists():
@@ -372,7 +366,6 @@ class DiabetesPredictorApp:
             ax.set_title("Age Distribution by Cluster")
             
             self.current_figure.tight_layout()
-            # Hide unused axes
             if main_frame.winfo_exists():
                 self.canvas = FigureCanvasTkAgg(self.current_figure, master=main_frame)
                 self.canvas.draw()
