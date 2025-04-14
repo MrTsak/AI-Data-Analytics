@@ -13,7 +13,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.cluster import KMeans
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.metrics import (accuracy_score, classification_report, confusion_matrix, roc_curve, auc, RocCurveDisplay)
 matplotlib.use('Agg')
 
@@ -476,28 +476,32 @@ class DiabetesPredictorApp:
             self.cleanup_previous_tab()
 
     def show_confusion_matrix(self):
-        # Displaying the confusion matrix!
         if not self.content_frame.winfo_exists():
             return 
         try:
             main_frame = ctk.CTkFrame(self.content_frame)
             main_frame.pack(fill="both", expand=True, padx=20, pady=20)
-            
-            self.current_figure = plt.Figure(figsize=(8, 6))
+
+            self.current_figure = plt.Figure(figsize=(10, 8)) 
             ax = self.current_figure.add_subplot(111)
-            
             cm = confusion_matrix(self.y_test, self.rf_pred)
-            sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", xticklabels=["No Diabetes", "Diabetes"], yticklabels=["No Diabetes", "Diabetes"], ax=ax, annot_kws={"size": 16})
-            
-            ax.set_title("Random Forest Confusion Matrix", fontsize=16, pad=20)
-            ax.set_xlabel("Predicted", fontsize=14)
-            ax.set_ylabel("Actual", fontsize=14)
-            
+
+            sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", annot_kws={"size": 16, "weight": "bold"}, cbar=False, ax=ax)
+
+            ax.set_xlabel("Predicted Diagnosis", fontsize=14, labelpad=15)
+            ax.set_ylabel("Actual Diagnosis", fontsize=14, labelpad=15)
+            ax.set_title("Diabetes Prediction Performance", fontsize=16, pad=20)
+
+            ax.set_xticklabels(["No Diabetes", "Diabetes"], fontsize=12)
+            ax.set_yticklabels(["No Diabetes", "Diabetes"], fontsize=12, rotation=0)
+
+            accuracy = accuracy_score(self.y_test, self.rf_pred)
+
             if main_frame.winfo_exists():
                 self.canvas = FigureCanvasTkAgg(self.current_figure, master=main_frame)
                 self.canvas.draw()
                 self.canvas.get_tk_widget().pack(fill="both", expand=True, padx=20, pady=20)
-            
+
         except Exception as e:
             print(f"Error showing confusion matrix: {e}")
             self.cleanup_previous_tab()
@@ -509,7 +513,7 @@ class DiabetesPredictorApp:
         try:
             main_frame = ctk.CTkScrollableFrame(self.content_frame)
             main_frame.pack(fill="both", expand=True, padx=20, pady=20)
-            # Feature importance plot
+
             plot_frame = ctk.CTkFrame(main_frame)
             plot_frame.pack(fill="both", expand=True, padx=10, pady=10)
             
