@@ -1,7 +1,6 @@
 import matplotlib
 import sys
 import gc
-import matplotlib
 import webbrowser
 import pandas as pd
 import numpy as np
@@ -15,7 +14,6 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import (accuracy_score, classification_report, confusion_matrix, roc_curve, auc, RocCurveDisplay)
-matplotlib.use('Agg')
 
 sns.set_style("whitegrid")
 
