@@ -29,7 +29,7 @@ A comprehensive **machine learning dashboard** for analyzing diabetes risk facto
 ## 🛠 Installation
 
 1. Clone the repository:
-  ```bash
+   ```bash
    git clone https://github.com/MrTsak/AI-Data-Analytics.git
    cd AI-Data-Analytics
 
@@ -40,18 +40,17 @@ customtkinter	≥ 5.2.1
 pandas	≥ 1.3.0
 scikit-learn	≥ 1.0.0
 
-```bash
+bash
 Install dependencies:
 
-```bash
-  pip install -r requirements.txt
-
+bash
+pip install -r requirements.txt
 Place your dataset at data/sample.csv (semicolon-delimited)
 
 🚀 Usage
 Launch the application:
 
-```bash
+bash
 python main.py
 Interface Guide:
 Tab Navigation: Switch between different analysis views
