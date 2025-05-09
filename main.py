@@ -50,6 +50,10 @@ class DiabetesPredictorApp:
                 'Age': 'Age',
                 'Outcome': 'Outcome'}, inplace=True)
             self.df.fillna(self.df.mean(), inplace=True)
+            # A little bit of data printing on the console
+            print(self.df.head())
+            print(self.df.info())
+            print(self.df.describe().round(2))
             # Error handling for missing values
         except Exception as e:
             print(f"Error loading data: {e}")
@@ -128,10 +132,6 @@ class DiabetesPredictorApp:
                     'Recall': lr_recall,
                     'Precision': lr_precision,
                     'Confusion Matrix': lr_cm}}
-            
-            # Store the feature importances
-            self.rf_feature_importance = pd.DataFrame({'Feature': features.columns,'Importance': self.rf_model.feature_importances_}).sort_values('Importance', ascending=False)
-            self.lr_feature_importance = pd.DataFrame({'Feature': features.columns,'Importance': np.abs(self.lr_model.coef_[0])}).sort_values('Importance', ascending=False)
 
         except Exception as e:
             print(f"Error training models: {e}")
@@ -171,7 +171,6 @@ class DiabetesPredictorApp:
             "Clustering": self.tabview.add("Clustering"),
             "Model Performance": self.tabview.add("Model Performance"),
             "Confusion": self.tabview.add("Confusion"),
-            "Features": self.tabview.add("Features"),
             "Conclusions": self.tabview.add("Conclusions")}      
         # Tab update
         self.safe_update_tab("Data Overview") 
@@ -223,8 +222,6 @@ class DiabetesPredictorApp:
                 self.show_model_performance()
             elif tab_name == "Confusion":
                 self.show_confusion_matrix()
-            elif tab_name == "Features":
-                self.show_feature_importance()
             elif tab_name == "Conclusions":
                 self.show_conclusions()
             
@@ -513,41 +510,6 @@ class DiabetesPredictorApp:
 
         except Exception as e:
             print(f"Error showing confusion matrix: {e}")
-            self.cleanup_previous_tab()
-    # Feature importance tab
-    def show_feature_importance(self):
-        if not self.content_frame.winfo_exists():
-            return
-        try:
-            main_frame = ctk.CTkScrollableFrame(self.content_frame)
-            main_frame.pack(fill="both", expand=True, padx=20, pady=20)
-            # Plot frames
-            plots_frame = ctk.CTkFrame(main_frame)
-            plots_frame.pack(fill="both", expand=True, padx=10, pady=10)
-            # 2 subplots with matplotlib
-            self.current_figure = plt.Figure(figsize=(10, 12)) 
-            ax1 = self.current_figure.add_subplot(211)
-            ax2 = self.current_figure.add_subplot(212)
-            # Random Forest feature importance plot
-            sns.barplot(data=self.rf_feature_importance, x='Importance', y='Feature', color="#4e8cff", ax=ax1)
-            ax1.set_title("Random Forest Feature Importance", fontsize=14, pad=20)
-            ax1.set_xlabel("Importance Score", fontsize=12)
-            ax1.set_ylabel("Features", fontsize=12)
-            # Logistic Regression feature importance plot
-            sns.barplot(data=self.lr_feature_importance, x='Importance', y='Feature', color="#ff7f0e", ax=ax2)
-            ax2.set_title("Logistic Regression Feature Importance (Absolute Coefficients)", fontsize=14, pad=20)
-            ax2.set_xlabel("Absolute Coefficient Value", fontsize=12)
-            ax2.set_ylabel("Features", fontsize=12)
-            # Spacing between the subplots
-            self.current_figure.subplots_adjust(hspace=0.4)
-
-            if plots_frame.winfo_exists():
-                self.canvas = FigureCanvasTkAgg(self.current_figure, master=plots_frame)
-                self.canvas.draw()
-                self.canvas.get_tk_widget().pack(fill="both", expand=True, padx=15, pady=15)
-
-        except Exception as e:
-            print(f"Error showing feature importance: {e}")
             self.cleanup_previous_tab()
     # Conclusions tab
     def show_conclusions(self):
