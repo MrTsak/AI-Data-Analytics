@@ -39,16 +39,12 @@ class DiabetesPredictorApp:
     # Load the data and rename the culumns
     def load_data(self):
         try:
-            self.df = pd.read_csv('data/sample.csv', sep=';')
-            self.df.rename(columns={'Pregnancies': 'Pregnancies',
-                'Glucose': 'Glucose',
-                'BloodPressure': 'BP',
-                'SkinThickness': 'SkinThick',
-                'Insulin': 'Insulin',
-                'BMI': 'BMI',
-                'DiabetesPedigreeFunction': 'DPF',
-                'Age': 'Age',
-                'Outcome': 'Outcome'}, inplace=True)
+            self.df = pd.read_csv('data/sample.csv')
+            # Convert categorical variables to numerical
+            self.df['gender'] = self.df['gender'].map({'Female': 0, 'Male': 1, 'Other': 2})
+            self.df['smoking_history'] = self.df['smoking_history'].map({'never': 0,'No Info': 1,'current': 2, 'former': 3,'ever': 4,'not current': 5
+            })
+            # Fill missing values with mean
             self.df.fillna(self.df.mean(), inplace=True)
             # A little bit of data printing on the console
             print(self.df.head())
@@ -62,10 +58,11 @@ class DiabetesPredictorApp:
     def train_models(self):
         try:
             # Splitting the data into features and target variable
-            features = self.df.drop(columns=['Outcome', 'Cluster'], errors='ignore')
+            features = self.df.drop(columns=['diabetes', 'Cluster'], errors='ignore')
             # The diabetes outcome is the target variable
-            target = self.df['Outcome'] 
-            self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(features, target, test_size=0.2, random_state=42, stratify=target)
+            target = self.df['diabetes'] 
+            self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(
+                features, target, test_size=0.2, random_state=42, stratify=target)
         
             # Random Forest Classifier
             self.rf_model = RandomForestClassifier(
@@ -140,7 +137,7 @@ class DiabetesPredictorApp:
     def perform_clustering(self):
         try:
             # 3 factors for clustering
-            cluster_features = self.df[['Glucose', 'BMI', 'Age']] 
+            cluster_features = self.df[['HbA1c_level', 'bmi', 'age']] 
             scaler = StandardScaler()
             scaled_features = scaler.fit_transform(cluster_features)  
             # KMeans usage
@@ -274,7 +271,7 @@ class DiabetesPredictorApp:
             # Header label
             ctk.CTkLabel(stats_frame, text="BASIC STATISTICS", font=("Arial", 16, "bold")).pack(pady=(10,5))
             # Making a list of the colums despite the outcome and cluster
-            columns_to_plot = [col for col in self.df.columns if col not in ['Outcome', 'Cluster']]
+            columns_to_plot = [col for col in self.df.columns if col not in ['diabetes', 'Cluster']]
             # Calculate the plots, rows and columns
             num_plots = len(columns_to_plot) 
             rows = (num_plots + 2) // 3
@@ -317,13 +314,13 @@ class DiabetesPredictorApp:
             ctk.CTkLabel(hypotheses_frame, text="HYPOTHESES", font=("Arial", 16, "bold")).pack(pady=(10, 5))
             # So I put them in as well as some sources
             hypotheses = [
-                ("1. Higher glucose levels correlate with higher diabetes risk", 
-                 "https://www.sciencedirect.com/science/article/pii/S0735109711050364"),
+                ("1. Higher HbA1c levels correlate with higher diabetes risk", 
+                 "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3747573/"),
                 ("2. BMI is positively correlated with diabetes risk", 
                  "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC8740746/"),
                 ("3. Age is a significant factor in diabetes risk", 
                  "https://www.thelancet.com/journals/lanhl/article/PIIS2666-7568(21)00177-X/fulltext"),
-                ("4. Blood pressure shows weaker correlation than other factors", 
+                ("4. Blood glucose levels show strong correlation with diabetes", 
                  "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4595710/")]
             # Making the hypotheses rows, hyperlinks function and the labels
             for hypo_text, url in hypotheses:
@@ -372,26 +369,26 @@ class DiabetesPredictorApp:
             self.current_figure = plt.Figure(figsize=(12, 10))
             axes = self.current_figure.subplots(2, 2)
             # I made 4 differnet kind of plots for the clustering tab
-            # Scatter oplot for Glucose and BMI
+            # Scatter oplot for HbA1c_level and bmi
             ax = axes[0, 0]
-            sns.scatterplot(data=self.df, x='Glucose', y='BMI', hue='Cluster', palette='viridis', ax=ax)
-            ax.set_title("Glucose vs BMI by Cluster")
-            # Cluster centers for Glucose, BMI and Age
+            sns.scatterplot(data=self.df, x='HbA1c_level', y='bmi', hue='Cluster', palette='viridis', ax=ax)
+            ax.set_title("HbA1c vs BMI by Cluster")
+            # Cluster centers for HbA1c_level, bmi and age
             ax = axes[0, 1]
-            centers_df = pd.DataFrame(self.cluster_centers, columns=['Glucose', 'BMI', 'Age'])
+            centers_df = pd.DataFrame(self.cluster_centers, columns=['HbA1c_level', 'bmi', 'age'])
             centers_df['Cluster'] = range(3)
             sns.barplot(data=centers_df.melt(id_vars='Cluster'), x='Cluster', y='value', hue='variable', ax=ax)
             ax.set_title("Cluster Centers (Standardized)")
             ax.legend(title='Feature')
             # Diabetes prevalence by cluster
             ax = axes[1, 0]
-            cluster_outcome = self.df.groupby('Cluster')['Outcome'].mean().reset_index()
-            sns.barplot(data=cluster_outcome, x='Cluster', y='Outcome', ax=ax)
+            cluster_outcome = self.df.groupby('Cluster')['diabetes'].mean().reset_index()
+            sns.barplot(data=cluster_outcome, x='Cluster', y='diabetes', ax=ax)
             ax.set_title("Diabetes Prevalence by Cluster")
             ax.set_ylabel("Diabetes Rate")
             # Boxplot for Age distribution by cluster
             ax = axes[1, 1]
-            sns.boxplot(data=self.df, x='Cluster', y='Age', ax=ax)
+            sns.boxplot(data=self.df, x='Cluster', y='age', ax=ax)
             ax.set_title("Age Distribution by Cluster")
             
             self.current_figure.tight_layout()
@@ -525,8 +522,8 @@ class DiabetesPredictorApp:
             # Just the conclusions we made with the results 
             conclusions = [
                 f"1. {self.better_model} performed best with {self.better_accuracy*100:.1f}% accuracy",
-                "2. Glucose levels are the most critical for the predictor of diabetes",
-                "3. The model could be improved with more factors and data" ]
+                "2. HbA1c levels and blood glucose are the most critical predictors of diabetes",
+                "3. The model could be improved with more lifestyle factors and genetic data" ]
             for conc in conclusions:
                 ctk.CTkLabel(conclusions_frame, text=conc, font=("Arial", 12), anchor="w").pack(fill="x", padx=20, pady=5)
             # Frame for the recommendations
@@ -535,8 +532,8 @@ class DiabetesPredictorApp:
             ctk.CTkLabel(rec_frame, text="RECOMMENDATIONS", font=("Arial", 16, "bold")).pack(pady=(10,5))
             # The recommendations I found out that would help
             recommendations = [
-                "• Collect more data on patients and their lifestyle",
-                "• Include HbA1c measurements for better glucose monitoring",]
+                "• Collect more data on patients' lifestyle and genetic factors",
+                "• Include continuous glucose monitoring data for better prediction",]
             for rec in recommendations:
                 ctk.CTkLabel(rec_frame, text=rec, font=("Arial", 12), anchor="w").pack(fill="x", padx=20, pady=2)
             
