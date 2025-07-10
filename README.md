@@ -1,7 +1,4 @@
-markdown
 # AI Data Analytics - Diabetes Prediction Dashboard
-
-![Dashboard Screenshot](screenshot.png)
 
 ## Overview
 
