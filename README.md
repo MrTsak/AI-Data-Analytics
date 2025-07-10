@@ -1,79 +1,145 @@
-# 🩺 Diabetes Prediction Dashboard
+markdown
+# AI Data Analytics - Diabetes Prediction Dashboard
 
-## 🌟 Overview
+![Dashboard Screenshot](screenshot.png)
 
-A comprehensive **machine learning dashboard** for analyzing diabetes risk factors and predicting outcomes. Provides interactive visualizations of clinical data and model performance metrics with a beautiful modern interface.
+## Overview
 
-## ✨ Features
+This application is an interactive diabetes prediction dashboard that combines data analytics with machine learning to provide insights into diabetes risk factors and predictions. Built with Python and CustomTkinter, it offers a comprehensive suite of tools for exploring diabetes-related health metrics and making predictions.
 
-### 📊 Data Analysis
-| Feature | Description |
-|---------|-------------|
-| 📈 Exploratory Visualizations | Histograms and distribution plots for all features |
-| 🔥 Correlation Heatmap | Interactive correlation matrix visualization |
-| 🎨 Patient Clustering | K-means clustering analysis (3 clusters) |
+## Features
 
-### 🤖 Machine Learning
-| Model | Accuracy | Key Features |
-|-------|----------|--------------|
-| Random Forest | ~72.1% | Feature importance analysis |
-| Logistic Regression | ~74.7% | Coefficient interpretation |
-| **Model Comparison** | Side-by-side metrics | ROC curve visualization |
+### Data Exploration
+- **Data Overview**: Visual distributions of all health metrics
+- **Correlation Analysis**: Interactive heatmap showing feature relationships
+- **Cluster Analysis**: Patient segmentation using K-means clustering
 
-### 🎨 Visualization
-- Interactive Matplotlib/Seaborn charts
-- Confusion matrix display
-- Dynamic ROC curve analysis
-- Light/Dark mode toggle
+### Machine Learning
+- **Model Comparison**: Random Forest vs Logistic Regression performance metrics
+- **Confusion Matrices**: Detailed model evaluation visualizations
+- **Live Prediction**: Interactive tool for real-time diabetes risk assessment
 
-## 🛠 Installation
+### Visualization
+- Interactive plots with Seaborn and Matplotlib
+- Dark/Light theme toggle
+- Responsive UI with CustomTkinter widgets
+
+## Technical Implementation
+
+### Requirements
+- Python 3.8+
+- Required packages:
+customtkinter
+pandas
+numpy
+scikit-learn
+matplotlib
+seaborn
+
+text
+
+### Data Structure
+The application processes a diabetes dataset with features including:
+- HbA1c levels
+- BMI
+- Age
+- Blood glucose levels
+- Hypertension status
+- Heart disease status
+- Smoking history (categorized)
+
+### Machine Learning Models
+1. **Random Forest Classifier**
+ - 150 estimators
+ - Max depth of 7
+ - Balanced class weights
+ - Optimized hyperparameters
+
+2. **Logistic Regression**
+ - L2 regularization
+ - Balanced class weights
+ - Liblinear solver
+
+## Installation
 
 1. Clone the repository:
-   ```bash
-   git clone https://github.com/MrTsak/AI-Data-Analytics.git
-   cd AI-Data-Analytics
-
-📦 Dependencies
-Package	Version
-Python	≥ 3.7
-customtkinter	≥ 5.2.1
-pandas	≥ 1.3.0
-scikit-learn	≥ 1.0.0
-
-bash
+ ```bash
+ git clone https://github.com/MrTsak/AI-Data-Analytics.git
+ cd AI-Data-Analytics
 Install dependencies:
 
 bash
 pip install -r requirements.txt
-Place your dataset at data/sample.csv (semicolon-delimited)
-
-🚀 Usage
-Launch the application:
+Run the application:
 
 bash
 python main.py
-Interface Guide:
-Tab Navigation: Switch between different analysis views
+Usage Guide
+Data Exploration:
 
-🎨 Theme Toggle: Click the sun/moon icon to change themes
+Navigate through tabs to view different visualizations
 
-📊 Interactive Plots: Hover for values, click to explore
+Examine correlations between features
 
-🔍 Research Links: Click "[source]" for reference materials
+Explore patient clusters
 
-📂 Data Format
-Required CSV structure:
+Model Analysis:
 
-csv
-Pregnancies;Glucose;BloodPressure;SkinThickness;Insulin;BMI;DiabetesPedigreeFunction;Age;Outcome
-Example row:
-csv
-6;148;72;35;0;33.6;0.627;50;1
+Compare model performance metrics
 
-🗂 Project Structure
+View ROC curves and confusion matrices
+
+See which model performs better
+
+Live Prediction:
+
+Adjust sliders for patient parameters
+
+Select a prediction model
+
+View risk probability and interpretation
+
+File Structure
+text
 AI-Data-Analytics/
 ├── data/
-│   └── sample.csv          # Dataset
-├── main.py                 # Main application
-├── requirements.txt        # Dependency list
-└── README.md               # Documentation
+│   └── sample.csv          # Diabetes dataset
+├── main.py                 # Main application code
+├── README.md               # This documentation
+└── requirements.txt        # Package requirements
+Key Technical Aspects
+Data Preprocessing:
+
+Handling of categorical variables (smoking history, gender)
+
+Missing value imputation
+
+Feature scaling for clustering
+
+UI/UX Features:
+
+Theme switching (dark/light mode)
+
+Responsive layout
+
+Interactive widgets
+
+Performance Optimization:
+
+Memory management
+
+Efficient plotting
+
+Model caching
+
+Contributing
+Contributions are welcome! Please:
+
+Fork the repository
+
+Create a feature branch
+
+Submit a pull request
+
+License
+MIT License
