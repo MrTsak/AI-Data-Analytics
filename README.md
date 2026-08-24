@@ -1,142 +1,95 @@
-# AI Data Analytics - Diabetes Prediction Dashboard
+# Diabetes Prediction Dashboard
 
-## Overview
+An educational desktop application that combines exploratory data analysis, machine-learning model comparison, patient clustering, and interactive diabetes-risk estimation.
 
-This application is an interactive diabetes prediction dashboard that combines data analytics with machine learning to provide insights into diabetes risk factors and predictions. Built with Python and CustomTkinter, it offers a comprehensive suite of tools for exploring diabetes-related health metrics and making predictions.
+The application is built with Python and CustomTkinter and analyses a dataset containing 100,000 health records. It is intended as a learning and portfolio project. It is **not a medical device and must not be used for clinical diagnosis or treatment decisions**.
 
 ## Features
 
-### Data Exploration
-- **Data Overview**: Visual distributions of all health metrics
-- **Correlation Analysis**: Interactive heatmap showing feature relationships
-- **Cluster Analysis**: Patient segmentation using K-means clustering
+### Data exploration
 
-### Machine Learning
-- **Model Comparison**: Random Forest vs Logistic Regression performance metrics
-- **Confusion Matrices**: Detailed model evaluation visualizations
-- **Live Prediction**: Interactive tool for real-time diabetes risk assessment
+- Visual distributions of the dataset's health metrics
+- Correlation heatmap for numeric features
+- Linked research hypotheses about major diabetes risk factors
+- Descriptive statistics and dataset summaries
 
-### Visualization
-- Interactive plots with Seaborn and Matplotlib
-- Dark/Light theme toggle
-- Responsive UI with CustomTkinter widgets
+### Machine learning
 
-## Technical Implementation
+- Random Forest and Logistic Regression classifiers
+- Stratified 80/20 train-test split
+- Balanced class weights to account for target-class imbalance
+- Model comparison using accuracy, precision, recall, and F1-score
+- Confusion-matrix visualisations
+- ROC curves and area-under-the-curve (AUC) comparison
+- Interactive risk estimation using either trained classifier
 
-### Requirements
-- Python 3.8+
-- Required packages:
-customtkinter
-pandas
-numpy
-scikit-learn
-matplotlib
-seaborn
+### Clustering
 
-text
+- K-means clustering with three patient groups
+- Standardisation of age, BMI, and HbA1c features before clustering
+- Cluster-centre and risk-profile visualisations
 
-### Data Structure
-The application processes a diabetes dataset with features including:
-- HbA1c levels
-- BMI
+### Interface and visualisation
+
+- Desktop interface built with CustomTkinter
+- Matplotlib and Seaborn charts embedded in the application
+- Light and dark appearance modes
+- Scrollable tab-based interface
+- Cleanup of previous charts and scheduled UI callbacks when switching tabs
+
+## Dataset
+
+The included CSV file contains 100,000 records and the following fields:
+
+- Gender
 - Age
-- Blood glucose levels
 - Hypertension status
-- Heart disease status
-- Smoking history (categorized)
+- Heart-disease status
+- Smoking history
+- BMI
+- HbA1c level
+- Blood-glucose level
+- Diabetes outcome
 
-### Machine Learning Models
-1. **Random Forest Classifier**
- - 150 estimators
- - Max depth of 7
- - Balanced class weights
- - Optimized hyperparameters
+The application converts categorical gender and smoking-history values to numeric representations for modelling. Numeric missing values, if present in a replacement dataset, are filled using the corresponding column mean.
 
-2. **Logistic Regression**
- - L2 regularization
- - Balanced class weights
- - Liblinear solver
+## Models
+
+### Random Forest Classifier
+
+- 150 estimators
+- Maximum tree depth of 7
+- Minimum of 8 samples required to split an internal node
+- Balanced class weights
+- Fixed random seed for reproducibility
+
+### Logistic Regression
+
+- L2 regularisation
+- `liblinear` solver
+- Regularisation strength `C=0.1`
+- Balanced class weights
+- Maximum of 1,000 iterations
+- Fixed random seed for reproducibility
+
+The application reports both models' evaluation metrics and identifies the model with the higher test-set accuracy. The displayed results describe performance on the included dataset only and do not establish clinical validity.
 
 ## Installation
 
-1. Clone the repository:
- ```bash
- git clone https://github.com/MrTsak/AI-Data-Analytics.git
- cd AI-Data-Analytics
-Install dependencies:
+Python 3.8 or newer is recommended.
 
-bash
+```bash
+git clone https://github.com/MrTsak/AI-Data-Analytics.git
+cd AI-Data-Analytics
 pip install -r requirements.txt
-Run the application:
+```
 
-bash
+## Running the application
+
+```bash
 python main.py
-Usage Guide
-Data Exploration:
+```
 
-Navigate through tabs to view different visualizations
+The application expects the dataset at `data/sample.csv` relative to the project directory.
 
-Examine correlations between features
-
-Explore patient clusters
-
-Model Analysis:
-
-Compare model performance metrics
-
-View ROC curves and confusion matrices
-
-See which model performs better
-
-Live Prediction:
-
-Adjust sliders for patient parameters
-
-Select a prediction model
-
-View risk probability and interpretation
-
-File Structure
-text
-AI-Data-Analytics/
-├── data/
-│   └── sample.csv          # Diabetes dataset
-├── main.py                 # Main application code
-├── README.md               # This documentation
-└── requirements.txt        # Package requirements
-Key Technical Aspects
-Data Preprocessing:
-
-Handling of categorical variables (smoking history, gender)
-
-Missing value imputation
-
-Feature scaling for clustering
-
-UI/UX Features:
-
-Theme switching (dark/light mode)
-
-Responsive layout
-
-Interactive widgets
-
-Performance Optimization:
-
-Memory management
-
-Efficient plotting
-
-Model caching
-
-Contributing
-Contributions are welcome! Please:
-
-Fork the repository
-
-Create a feature branch
-
-Submit a pull request
-
-License
-MIT License
+## Main views
