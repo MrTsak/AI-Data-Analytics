@@ -2,7 +2,9 @@
 
 Explore 100,000 health records, compare two machine-learning models, and try a live diabetes-risk estimate in your browser.
 
-**Live demo:** [tsakioan.com/projects/diabetes](https://tsakioan.com/projects/diabetes/)
+**Live demo:** [tsakioan.com/projects/diabetes](https://tsakioan.com/projects/diabetes/) · Greek version: [tsakioan.com/projects/diabetes/el](https://tsakioan.com/projects/diabetes/el/)
+
+The Greek page (`web/el/index.html`) is a hand-written translation of `web/index.html`; both load the same scripts, and `web/js/i18n.js` holds the Greek text the scripts generate. When you change one page, change the other: `tests/js/pages.test.mjs` fails if their structure drifts apart.
 
 ![Dashboard hero](docs/screenshots/hero.png)
 
