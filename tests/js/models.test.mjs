@@ -22,11 +22,12 @@ test('RF matches Python on all parity cases', () => {
   }
 });
 
-test('riskBand boundaries', () => {
-  assert.equal(riskBand(0.39), 'Low');
-  assert.equal(riskBand(0.4), 'Moderate');
-  assert.equal(riskBand(0.69), 'Moderate');
-  assert.equal(riskBand(0.7), 'High');
+test('riskBand boundaries are relative to the base rate', () => {
+  const base = 0.088;
+  assert.equal(riskBand(0.17, base), 'Low');
+  assert.equal(riskBand(2 * base, base), 'Moderate');
+  assert.equal(riskBand(0.43, base), 'Moderate');
+  assert.equal(riskBand(5 * base, base), 'High');
 });
 
 test('clampInput handles empty, NaN and out-of-range', () => {

@@ -37,7 +37,7 @@ On a held-out test set of 19,226 patients (stratified 80/20 split):
 | F1 | **0.622** | 0.574 |
 | Accuracy | **0.906** | 0.885 |
 
-Only 8.8% of patients are diabetic, so the best model is chosen by ROC-AUC rather than accuracy. Both models use balanced class weights. They catch most diabetic patients, but more than half of the patients they flag are false alarms (precision below 50%). That trade-off suits screening, where a follow-up test settles it. Because of the class weighting, the predicted percentages run high (an average patient scores well above the 8.8% base rate), so the live estimator is for comparing how inputs move the estimate, not for reading off anyone's actual risk. HbA1c and blood glucose carry most of the predictive signal.
+Only 8.8% of patients are diabetic, so the best model is chosen by ROC-AUC rather than accuracy. They catch most diabetic patients, but more than half of the patients they flag are false alarms (precision below 50%). That trade-off suits screening, where a follow-up test settles it. Both models are trained without class weights, so their probabilities are already on the dataset's own scale (on simulated data with a known 6% risk, the average prediction matched the observed rate). Bands are relative to the 8.8% rate (Moderate from 2×, High from 5×). The estimator is for comparing how inputs move the estimate, not for reading off anyone's actual risk. **The metrics below come from the earlier class-weighted training and will be regenerated.**
 
 ## Dataset
 

@@ -61,11 +61,11 @@ def train_models(ds: Dataset) -> ModelResults:
     fill_values = X_train.mean()
     X_train, X_test = X_train.fillna(fill_values), X_test.fillna(fill_values)
     rf = RandomForestClassifier(n_estimators=150, max_depth=7, min_samples_split=8,
-                                class_weight="balanced", random_state=SEED, n_jobs=-1)
+                                random_state=SEED, n_jobs=-1)
     rf.fit(X_train, y_train)
     lr = Pipeline([
         ("scale", StandardScaler()),
-        ("clf", LogisticRegression(C=0.1, class_weight="balanced", max_iter=1000,
+        ("clf", LogisticRegression(C=0.1, max_iter=1000,
                                    random_state=SEED)),
     ])
     lr.fit(X_train, y_train)

@@ -45,9 +45,10 @@ export function predictRF(model, x) {
   return total / model.trees.length;
 }
 
-export function riskBand(p) {
-  if (p >= 0.7) return 'High';
-  if (p >= 0.4) return 'Moderate';
+/** Bands are relative to the dataset's base rate: Moderate from 2x, High from 5x. */
+export function riskBand(p, base = 0.088) {
+  if (p >= 5 * base) return 'High';
+  if (p >= 2 * base) return 'Moderate';
   return 'Low';
 }
 
