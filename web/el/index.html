@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="el">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Εξερευνητής κινδύνου διαβήτη</title>
+  <meta name="description" content="Εξερεύνησε 100.000 εγγραφές, σύγκρινε δύο μοντέλα μηχανικής μάθησης και δοκίμασε μια ζωντανή εκτίμηση κινδύνου διαβήτη. Εκπαιδευτικό έργο ανάλυσης δεδομένων.">
+  <link rel="canonical" href="https://tsakioan.com/projects/diabetes/el/">
+  <link rel="alternate" hreflang="en" href="https://tsakioan.com/projects/diabetes/">
+  <link rel="alternate" hreflang="el" href="https://tsakioan.com/projects/diabetes/el/">
+  <link rel="stylesheet" href="../styles.css">
+  <script src="../vendor/d3.min.js"></script>
+  <script src="../vendor/plot.umd.min.js"></script>
+  <script>
+    try { const t = localStorage.getItem('theme'); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
+  </script>
+</head>
+<body>
+  <a class="skip" href="#main">Μετάβαση στο περιεχόμενο</a>
+  <header class="topbar">
+    <a class="brand" href="#top">Εξερευνητής κινδύνου διαβήτη</a>
+    <nav aria-label="Ενότητες">
+      <a href="#explore">Εξερεύνηση</a>
+      <a href="#clusters">Ομάδες</a>
+      <a href="#models">Μοντέλα</a>
+      <a href="#predict">Δοκίμασε</a>
+      <a href="../" hreflang="en" lang="en">English</a>
+    </nav>
+    <button class="theme-toggle" type="button" aria-label="Αλλαγή θέματος χρωμάτων">Σκούρο</button>
+  </header>
+
+  <main id="main">
+    <section class="hero" id="top">
+      <h1>Τι προβλέπει τον διαβήτη σε <span data-bind="n_rows">96.128</span> εγγραφές;</h1>
+      <p class="lede" data-bind="hero-lede">Φόρτωση της ανάλυσης…</p>
+      <p class="hero-actions">
+        <a class="button" href="#predict">Δοκίμασε τον εκτιμητή κινδύνου</a>
+        <a class="link" href="https://github.com/MrTsak/AI-Data-Analytics">Δες τον κώδικα στο GitHub</a>
+      </p>
+      <p class="disclaimer">Εκπαιδευτικό έργο — δεν είναι ιατρική συσκευή ούτε διάγνωση.</p>
+    </section>
+
+    <section class="block" id="explore" aria-labelledby="explore-h">
+      <div class="block-text">
+        <h2 id="explore-h">Εξερεύνηση των δεδομένων</h2>
+        <p>Επίλεξε μια μέτρηση για να συγκρίνεις ασθενείς με και χωρίς διαβήτη. Οι συνεχείς τιμές εμφανίζονται ως ποσοστό κάθε ομάδας, ώστε η μικρότερη ομάδα διαβητικών να φαίνεται καθαρά.</p>
+        <label class="field">
+          <span>Μέτρηση</span>
+          <select id="feature-picker"></select>
+        </label>
+        <p class="note" id="feature-note"></p>
+      </div>
+      <figure class="block-chart" id="explore-chart" aria-live="polite"></figure>
+    </section>
+
+    <section class="block" aria-labelledby="corr-h">
+      <div class="block-text">
+        <h2 id="corr-h">Πώς σχετίζονται οι μετρήσεις</h2>
+        <p>Συντελεστής συσχέτισης Pearson για κάθε ζεύγος μετρήσεων και για την έκβαση του διαβήτη. Η κάτω γραμμή είναι αυτή που πρέπει να διαβάσεις πρώτη.</p>
+        <ul class="hypotheses" id="hypotheses"></ul>
+      </div>
+      <figure class="block-chart" id="corr-chart"></figure>
+    </section>
+
+    <section class="block" id="clusters" aria-labelledby="clusters-h">
+      <div class="block-text">
+        <h2 id="clusters-h">Ομάδες ασθενών</h2>
+        <p>Η ομαδοποίηση K-means με βάση την ηλικία, το BMI και το HbA1c βρίσκει τρεις ομάδες χωρίς να του δοθεί ποιος έχει διαβήτη. Το ποσοστό διαβήτη κάθε ομάδας μετριέται στη συνέχεια.</p>
+        <ol class="cluster-list" id="cluster-list" start="0"></ol>
+      </div>
+      <figure class="block-chart" id="cluster-chart"></figure>
+    </section>
+
+    <section class="block" id="models" aria-labelledby="models-h">
+      <div class="block-text">
+        <h2 id="models-h">Σύγκριση των μοντέλων</h2>
+        <p>Μόνο το <span data-bind="positive_pct">9%</span> των ασθενών έχει διαβήτη, οπότε ένα μοντέλο μπορεί να έχει υψηλή ακρίβεια και να χάνει πραγματικές περιπτώσεις. Το καλύτερο μοντέλο επιλέγεται με βάση το ROC-AUC, και η ανάκληση δείχνει πόσους διαβητικούς ασθενείς βρίσκει το καθένα.</p>
+        <table class="metrics" id="metrics-table"></table>
+      </div>
+      <div class="block-chart chart-stack">
+        <figure id="roc-chart"></figure>
+        <div class="confusions" id="confusion-charts"></div>
+        <figure id="importance-chart"></figure>
+      </div>
+    </section>
+
+    <section class="predict" id="predict" aria-labelledby="predict-h">
+      <div class="predict-head">
+        <h2 id="predict-h">Δοκίμασε τον εκτιμητή κινδύνου</h2>
+        <p>Μετακίνησε τους ρυθμιστές και τα δύο μοντέλα ενημερώνονται αμέσως. Τρέχουν στον περιηγητή σου· ό,τι εισάγεις δεν φεύγει από αυτή τη σελίδα.</p>
+        <p class="note">Η φόρμα και τα αποτελέσματα εμφανίζονται στα αγγλικά.</p>
+      </div>
+      <div class="predict-grid">
+        <form class="predict-form" id="predict-form" novalidate></form>
+        <div class="predict-result" id="predict-result"></div>
+        <p class="sr-only" id="predict-summary" role="status" aria-live="polite"></p>
+      </div>
+      <p class="disclaimer">Εκπαιδευτικό έργο — δεν είναι ιατρική συσκευή ούτε διάγνωση. Οι εκτιμήσεις αφορούν μόνο αυτό το σύνολο δεδομένων, δεν έχουν επικυρωθεί κλινικά και δεν είναι ο πραγματικός κίνδυνος κανενός.</p>
+    </section>
+
+    <section class="block" aria-labelledby="method-h">
+      <div class="block-text">
+        <h2 id="method-h">Πώς δοκιμάστηκε</h2>
+      </div>
+      <div class="block-chart">
+        <ul class="findings-list">
+          <li>Τα δεδομένα: 100.000 εγγραφές. Αφαιρέθηκαν 3.854 ακριβώς διπλές και 18 εγγραφές με φύλο «Άλλο», και έμειναν 96.128. Οι εγγραφές χωρίστηκαν σε 80/20 με στρωματοποίηση, ώστε και τα δύο σύνολα να διατηρούν το ίδιο ποσοστό διαβητικών εγγραφών.</li>
+          <li>Τα μοντέλα: ένα τυχαίο δάσος (150 δέντρα, βάθος 7) και μια λογιστική παλινδρόμηση, και τα δύο εκπαιδευμένα μόνο στο σύνολο εκπαίδευσης. Οι ελλείπουσες τιμές συμπληρώθηκαν με τους μέσους όρους του συνόλου εκπαίδευσης, ώστε το σύνολο δοκιμής να μην επηρέασε ποτέ την εκπαίδευση.</li>
+          <li>Βαθμολόγηση: το ROC-AUC επιλέγει το καλύτερο μοντέλο, επειδή μόνο το 8,8% των εγγραφών είναι διαβητικές και η ακρίβεια μόνη της μπορεί να φαίνεται υψηλή ενώ το μοντέλο χάνει περιπτώσεις. Η ανάκληση, η ακρίβεια θετικών και το F1 αναφέρονται με όριο 0,5.</li>
+          <li>Έλεγχοι: η διαδικασία έχει αυτόματα τεστ. Ο προβλεπτής του περιηγητή συμφώνησε με τα μοντέλα της Python σε 200 δοκιμαστικές εισόδους, με απόκλιση μικρότερη από ένα εκατομμυριοστό.</li>
+          <li>Τι δεν μπορεί να δείξει: οι εγγραφές δεν έχουν στοιχεία τρόπου ζωής, διατροφής, οικογενειακού ιστορικού ή γενετικά στοιχεία, και η προέλευσή τους δεν είναι τεκμηριωμένη. Τίποτα δεν έχει επικυρωθεί κλινικά ή σε άλλο πληθυσμό. Είναι εργαλείο διδασκαλίας, όχι διάγνωση, και κανένα από τα δύο μοντέλα δεν είναι κατάλληλο για έλεγχο.</li>
+        </ul>
+      </div>
+    </section>
+    <section class="block findings" aria-labelledby="findings-h">
+      <div class="block-text">
+        <h2 id="findings-h">Ευρήματα και περιορισμοί</h2>
+      </div>
+      <div class="block-chart">
+        <ul class="findings-list" id="findings"></ul>
+        <p class="about">Φτιάχτηκε από τον <a href="https://tsakioan.com/el/">Ιωάννη Τσακαλίδη</a>. Αρχικά ήταν εφαρμογή επιφάνειας εργασίας με CustomTkinter για μια πιστοποίηση της Gatehouse Awards, και αργότερα ξαναχτίστηκε για το web. Η διαδικασία σε Python, τα τεστ και η αρχική έκδοση για επιφάνεια εργασίας βρίσκονται στο <a href="https://github.com/MrTsak/AI-Data-Analytics">GitHub</a>.</p>
+        <p class="about">Δεδομένα: το <a href="https://www.kaggle.com/datasets/iammustafatz/diabetes-prediction-dataset">Diabetes Prediction Dataset</a> του iammustafatz, δημοσιευμένο στο Kaggle. Άδεια στο Kaggle: «Data files © Original Authors». Η σελίδα εμφανίζει μόνο συνοπτικά αποτελέσματα και μοντέλα που εκπαιδεύτηκαν στα δεδομένα, όχι τις εγγραφές. Η προέλευση των δεδομένων δεν είναι τεκμηριωμένη, οπότε τα αποτελέσματα πρέπει να διαβάζονται ως επεξηγηματικά.</p>
+      </div>
+    </section>
+  </main>
+
+  <p class="load-error" id="load-error" hidden>Τα δεδομένα ανάλυσης δεν φορτώθηκαν. Έλεγξε ότι ο φάκελος data/ βρίσκεται δίπλα στον φάκελο js/ του έργου, και φόρτωσε ξανά.</p>
+  <script type="module" src="../js/app.js"></script>
+</body>
+</html>

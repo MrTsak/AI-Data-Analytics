@@ -1,4 +1,6 @@
 // Chart builders. Each returns a DOM node built with Observable Plot (loaded as a global).
+import { t, featureLabel, modelName, num, pick } from './i18n.js';
+
 const Plot = globalThis.Plot;
 
 export const LABELS = {
@@ -46,12 +48,13 @@ export function histogram(h, feat, width) {
   });
   return Plot.plot({
     ...base(c, width), height: Math.min(380, width * 0.62),
-    x: { label: LABELS[feat] },
-    y: { label: '% of group', grid: true },
+    x: { label: featureLabel(feat, LABELS) },
+    y: { label: t('% of group'), grid: true },
     color: { domain: ['No diabetes', 'Diabetes'], range: [c.neg, c.pos] },
     marks: [
       Plot.rectY(rows, { x1: 'x1', x2: 'x2', y: 'y', fill: 'group', fillOpacity: 0.55, inset: 0.5,
-        tip: true, title: (d) => `${d.group}\n${d.x1}–${d.x2}: ${d.y.toFixed(1)}% of group` }),
+        tip: true,
+        title: (d) => `${t(d.group)}\n${d.x1}–${d.x2}: ${num(d.y, 1)}% ${pick('of group', 'της ομάδας')}` }),
       Plot.ruleY([0], { stroke: c.soft }),
     ],
   });
@@ -62,16 +65,17 @@ export function categoryRates(cat, key, width) {
   const c = palette();
   const rows = cat.labels.map((label, i) => {
     const total = cat.neg[i] + cat.pos[i];
-    return { label, rate: (cat.pos[i] / total) * 100, total };
+    return { label: t(label), rate: (cat.pos[i] / total) * 100, total };
   });
   return Plot.plot({
     ...base(c, width), height: 60 + rows.length * 38, marginLeft: 170,
-    x: { label: 'Diabetes rate (%)', grid: true },
+    x: { label: t('Diabetes rate (%)'), grid: true },
     y: { label: null, domain: rows.map((r) => r.label) },
     marks: [
       Plot.barX(rows, { y: 'label', x: 'rate', fill: c.pos, fillOpacity: 0.8,
-        tip: true, title: (d) => `${d.label}: ${d.rate.toFixed(1)}% of ${d.total.toLocaleString()} patients` }),
-      Plot.text(rows, { y: 'label', x: 'rate', text: (d) => `${d.rate.toFixed(1)}%`, dx: 6, textAnchor: 'start', fill: c.ink }),
+        tip: true,
+        title: (d) => `${d.label}: ${num(d.rate, 1)}% ${pick('of', 'από')} ${num(d.total)} ${pick('patients', 'ασθενείς')}` }),
+      Plot.text(rows, { y: 'label', x: 'rate', text: (d) => `${num(d.rate, 1)}%`, dx: 6, textAnchor: 'start', fill: c.ink }),
       Plot.ruleX([0], { stroke: c.soft }),
     ],
   });
@@ -83,10 +87,10 @@ export function correlationHeatmap(corr, width) {
   const rows = [];
   for (let i = 0; i < n; i++) {
     for (let j = 0; j <= i; j++) {
-      rows.push({ a: LABELS[corr.labels[j]], b: LABELS[corr.labels[i]], r: corr.matrix[i][j] });
+      rows.push({ a: featureLabel(corr.labels[j], LABELS), b: featureLabel(corr.labels[i], LABELS), r: corr.matrix[i][j] });
     }
   }
-  const names = corr.labels.map((l) => LABELS[l]);
+  const names = corr.labels.map((l) => featureLabel(l, LABELS));
   const size = Math.min(width, 620);
   return Plot.plot({
     ...base(c, size), height: size * 0.9, marginLeft: 150, marginBottom: 110,
@@ -95,8 +99,8 @@ export function correlationHeatmap(corr, width) {
     color: { type: 'diverging', scheme: 'RdBu', domain: [-1, 1], reverse: true },
     marks: [
       Plot.cell(rows, { x: 'a', y: 'b', fill: 'r', inset: 1, tip: true,
-        title: (d) => `${d.a} × ${d.b}: r = ${d.r.toFixed(2)}` }),
-      Plot.text(rows, { x: 'a', y: 'b', text: (d) => d.r.toFixed(2),
+        title: (d) => `${d.a} × ${d.b}: r = ${num(d.r, 2)}` }),
+      Plot.text(rows, { x: 'a', y: 'b', text: (d) => num(d.r, 2),
         fill: (d) => (Math.abs(d.r) > 0.5 ? 'white' : 'black'), fontSize: 11 }),
     ],
   });
@@ -121,13 +125,14 @@ export function clusterScatter(grid, width) {
 export function rocChart(metrics, names, width) {
   const c = palette();
   const colors = [c.ink, c.mid];
+  const shown = names.map(modelName);
   const rows = names.flatMap((name) =>
-    metrics[name].roc.fpr.map((fpr, i) => ({ name, fpr, tpr: metrics[name].roc.tpr[i] })));
+    metrics[name].roc.fpr.map((fpr, i) => ({ name: modelName(name), fpr, tpr: metrics[name].roc.tpr[i] })));
   return Plot.plot({
     ...base(c, width), height: Math.min(380, width * 0.7),
-    x: { label: 'False positive rate', domain: [0, 1] },
-    y: { label: 'True positive rate (recall)', domain: [0, 1], grid: true },
-    color: { domain: names, range: colors, legend: true },
+    x: { label: t('False positive rate'), domain: [0, 1] },
+    y: { label: t('True positive rate (recall)'), domain: [0, 1], grid: true },
+    color: { domain: shown, range: colors, legend: true },
     marks: [
       Plot.line([[0, 0], [1, 1]], { stroke: c.rule, strokeDasharray: '4 4' }),
       Plot.line(rows, { x: 'fpr', y: 'tpr', stroke: 'name', strokeWidth: 2.25 }),
@@ -137,19 +142,19 @@ export function rocChart(metrics, names, width) {
 
 export function confusion(cm, title, width) {
   const c = palette();
-  const labels = ['No diabetes', 'Diabetes'];
+  const labels = ['No diabetes', 'Diabetes'].map(t);
   const rows = [];
   cm.forEach((row, i) => row.forEach((v, j) =>
     rows.push({ actual: labels[i], predicted: labels[j], v, correct: i === j })));
   return Plot.plot({
     ...base(c, width), height: 230, marginLeft: 100, marginTop: 34,
-    title,
-    x: { domain: labels, label: 'Predicted', axis: 'top' },
-    y: { domain: labels, label: 'Actual' },
+    title: modelName(title),
+    x: { domain: labels, label: t('Predicted'), axis: 'top' },
+    y: { domain: labels, label: t('Actual') },
     marks: [
       Plot.cell(rows, { x: 'predicted', y: 'actual', fill: (d) => (d.correct ? c.neg : c.pos),
         fillOpacity: (d) => (d.correct ? 0.22 : 0.18), inset: 2 }),
-      Plot.text(rows, { x: 'predicted', y: 'actual', text: (d) => d.v.toLocaleString(), fontSize: 18,
+      Plot.text(rows, { x: 'predicted', y: 'actual', text: (d) => num(d.v), fontSize: 18,
         fontWeight: 700, fill: c.ink }),
     ],
   });
@@ -158,13 +163,13 @@ export function confusion(cm, title, width) {
 export function importanceBars(importances, width) {
   const c = palette();
   const rows = Object.entries(importances)
-    .map(([f, v]) => ({ f: LABELS[f] ?? f, v }))
+    .map(([f, v]) => ({ f: featureLabel(f, LABELS), v }))
     .sort((a, b) => b.v - a.v)
     .slice(0, 8);
   return Plot.plot({
     ...base(c, width), height: 60 + rows.length * 30, marginLeft: 170,
-    title: 'What the Random Forest relies on',
-    x: { label: 'Feature importance', grid: true },
+    title: t('What the Random Forest relies on'),
+    x: { label: t('Feature importance'), grid: true },
     y: { label: null, domain: rows.map((r) => r.f) },
     marks: [
       Plot.barX(rows, { y: 'f', x: 'v', fill: c.ink, fillOpacity: 0.75 }),

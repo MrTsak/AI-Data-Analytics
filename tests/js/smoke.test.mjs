@@ -26,6 +26,7 @@ function serve() {
     if (!url.pathname.startsWith(PREFIX)) { res.writeHead(404).end(); return; }
     let rel = normalize(url.pathname.slice(PREFIX.length)).replace(/^(\.\.[/\\])+/, '');
     if (rel === '' || rel === '.') rel = 'index.html';
+    else if (rel.endsWith('/')) rel = join(rel, 'index.html');
     try {
       const body = await readFile(join(WEB_ROOT, rel));
       res.writeHead(200, { 'content-type': TYPES[extname(rel)] || 'application/octet-stream' }).end(body);
@@ -84,6 +85,36 @@ test('dashboard renders under a sub-path and the predictor responds', { skip: !c
     const nav = await page.locator('.topbar nav a').first().boundingBox();
     assert.ok(nav && nav.width > 0, 'nav visible on phones');
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth), 390);
+
+    assert.deepEqual(errors, []);
+  } finally {
+    await browser.close();
+    server.close();
+  }
+});
+
+test('Greek page renders the same charts in Greek', { skip: !chromium && 'playwright not installed', timeout: 60000 }, async () => {
+  const server = await serve();
+  const browser = await chromium.launch();
+  try {
+    const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+    const errors = [];
+    page.on('pageerror', (e) => errors.push(e.message));
+    page.on('response', (r) => { if (r.url().includes(PREFIX) && r.status() >= 400) errors.push(`${r.status()} ${r.url()}`); });
+    await page.goto(`http://localhost:${server.address().port}${PREFIX}el/`, { waitUntil: 'networkidle' });
+    await page.waitForSelector('.readout-value', { timeout: 10000 });
+
+    assert.equal(await page.getAttribute('html', 'lang'), 'el');
+    for (const id of ['explore-chart', 'corr-chart', 'cluster-chart', 'roc-chart', 'confusion-charts', 'importance-chart']) {
+      assert.ok(await page.$(`#${id} svg`), `#${id} has a chart`);
+    }
+    assert.match(await page.textContent('h1'), /96\.128/, 'record count uses Greek separators');
+    assert.match(await page.textContent('#cluster-list li strong'), /^Ομάδα 1: /);
+    assert.match(await page.textContent('#cluster-list li span'), /ασθενείς\. Μέση ηλικία 49, BMI 28,9/);
+    assert.match(await page.textContent('#metrics-table'), /Τυχαίο δάσος/);
+    assert.match(await page.textContent('#findings'), /Το μοντέλο «/);
+    assert.match(await page.textContent('#findings'), /κατάλληλο για έλεγχο/);
+    assert.equal(await page.textContent('.theme-toggle'), 'Σκούρο');
 
     assert.deepEqual(errors, []);
   } finally {
