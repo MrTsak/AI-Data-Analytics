@@ -52,7 +52,16 @@ def _encode(df: pd.DataFrame) -> pd.DataFrame:
     return out[FEATURES]
 
 
+DATASET_HELP = (
+    "The dataset is not included in this repository. Download the Diabetes Prediction Dataset "
+    "by iammustafatz from Kaggle (https://www.kaggle.com/datasets/iammustafatz/diabetes-prediction-dataset), "
+    "accept its terms, and save it as data/sample.csv. See the README."
+)
+
+
 def load_dataset(path: str | Path = DEFAULT_PATH) -> Dataset:
+    if not Path(path).exists():
+        raise FileNotFoundError(f"{path} is missing. {DATASET_HELP}")
     df = pd.read_csv(path)
     n_original = len(df)
     n_duplicates = int(df.duplicated().sum())

@@ -138,7 +138,7 @@ function renderCharts() {
   const d = state.data;
   renderExplore();
   mount($('#corr-chart'), charts.correlationHeatmap(d.explore.correlation, widthOf($('#corr-chart'))));
-  mount($('#cluster-chart'), charts.clusterScatter(d.clusters.sample, widthOf($('#cluster-chart'))));
+  mount($('#cluster-chart'), charts.clusterScatter(d.clusters.grid, widthOf($('#cluster-chart'))));
   const stack = $('#roc-chart');
   mount(stack, charts.rocChart(d.models.metrics, MODEL_NAMES, widthOf(stack)));
   const conf = $('#confusion-charts');
