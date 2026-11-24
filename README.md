@@ -1,95 +1,131 @@
-# Diabetes Prediction Dashboard
+# Diabetes Risk Explorer
 
-An educational desktop application that combines exploratory data analysis, machine-learning model comparison, patient clustering, and interactive diabetes-risk estimation.
+Explore 100,000 patient health records, compare two machine-learning models, and try a live diabetes-risk estimate in your browser.
 
-The application is built with Python and CustomTkinter and analyses a dataset containing 100,000 health records. It is intended as a learning and portfolio project. It is **not a medical device and must not be used for clinical diagnosis or treatment decisions**.
+**Live demo:** [tsakioan.com/projects/diabetes](https://tsakioan.com/projects/diabetes/)
 
-## Features
+![Dashboard hero](docs/screenshots/hero.png)
 
-### Data exploration
+> **Educational project — not a medical device or diagnosis.** The results describe this dataset only and are not clinically validated.
 
-- Visual distributions of the dataset's health metrics
-- Correlation heatmap for numeric features
-- Linked research hypotheses about major diabetes risk factors
-- Descriptive statistics and dataset summaries
+The project started as a CustomTkinter desktop app for a Gatehouse Awards qualification. It has since been rebuilt with a shared, tested Python pipeline and an interactive web version that runs entirely in the browser.
 
-### Machine learning
+## What it does
 
-- Random Forest and Logistic Regression classifiers
-- Stratified 80/20 train-test split
-- Balanced class weights to account for target-class imbalance
-- Model comparison using accuracy, precision, recall, and F1-score
-- Confusion-matrix visualisations
-- ROC curves and area-under-the-curve (AUC) comparison
-- Interactive risk estimation using either trained classifier
+- **Explore the data.** Compare the distributions of HbA1c, blood glucose, BMI and age for patients with and without diabetes, plus diabetes rates by gender, smoking history, hypertension and heart disease. A correlation heatmap and four research hypotheses with sources sit alongside.
+- **Find patient groups.** K-means clustering on age, BMI and HbA1c finds three groups. Each group's description is generated from its actual centre and diabetes rate.
+- **Compare models.** A Random Forest and a Logistic Regression are compared on ROC-AUC, recall, precision, F1 and accuracy, with ROC curves, confusion matrices and feature importance.
+- **Try it live.** Move sliders for gender, age, BMI, HbA1c, glucose, hypertension, heart disease and smoking history. Both models update instantly, client-side; nothing is sent anywhere.
 
-### Clustering
+| Predictor | Model comparison |
+|---|---|
+| ![Live predictor](docs/screenshots/predictor.png) | ![Model comparison](docs/screenshots/models.png) |
 
-- K-means clustering with three patient groups
-- Standardisation of age, BMI, and HbA1c features before clustering
-- Cluster-centre and risk-profile visualisations
+| Dark mode | Phone |
+|---|---|
+| ![Explore section in dark mode](docs/screenshots/explore-dark.png) | ![Predictor on a phone](docs/screenshots/phone.png) |
 
-### Interface and visualisation
+## Results
 
-- Desktop interface built with CustomTkinter
-- Matplotlib and Seaborn charts embedded in the application
-- Light and dark appearance modes
-- Scrollable tab-based interface
-- Cleanup of previous charts and scheduled UI callbacks when switching tabs
+On a held-out test set of 19,226 patients (stratified 80/20 split):
 
-## Dataset
+| Metric | Random Forest | Logistic Regression |
+|---|---|---|
+| ROC-AUC | **0.972** | 0.960 |
+| Recall | **0.880** | 0.876 |
+| Precision | **0.481** | 0.427 |
+| F1 | **0.622** | 0.574 |
+| Accuracy | **0.906** | 0.885 |
 
-The included CSV file contains 100,000 records and the following fields:
+Only 8.8% of patients are diabetic, so the best model is chosen by ROC-AUC rather than accuracy. Both models use balanced class weights. They catch most diabetic patients at the cost of some false alarms, which is a sensible trade-off for a screening-style tool. HbA1c and blood glucose carry most of the predictive signal.
 
-- Gender
-- Age
-- Hypertension status
-- Heart-disease status
-- Smoking history
-- BMI
-- HbA1c level
-- Blood-glucose level
-- Diabetes outcome
+## Data preparation
 
-The application converts categorical gender and smoking-history values to numeric representations for modelling. Numeric missing values, if present in a replacement dataset, are filled using the corresponding column mean.
+The dataset (`data/sample.csv`) has 100,000 records with gender, age, hypertension, heart disease, smoking history, BMI, HbA1c, blood glucose and the diabetes outcome. Preparation steps:
 
-## Models
+- **3,854 exact duplicate rows are removed** before splitting, so identical records can't appear in both the training and test sets and inflate scores.
+- **18 records with gender "Other" are excluded.** That's too few to learn anything reliable from.
+- **Smoking history is one-hot encoded**, with "No info" as the baseline. Earlier versions used an arbitrary 0–5 number, which implied a false ordering.
+- Missing numeric values in a replacement dataset are filled with the column mean.
 
-### Random Forest Classifier
+## Project structure
 
-- 150 estimators
-- Maximum tree depth of 7
-- Minimum of 8 samples required to split an internal node
-- Balanced class weights
-- Fixed random seed for reproducibility
+```
+analysis/            Shared Python pipeline (used by both versions)
+  data.py            load, dedupe, encode
+  models.py          train + evaluate Random Forest and Logistic Regression
+  clustering.py      K-means with stable, data-driven group labels
+scripts/
+  export_web.py      run the pipeline, write web/data/*.json
+web/                 Static site: copy this folder to deploy
+  index.html, styles.css
+  js/                app.js, charts.js, predictor.js, models.js (model runtime)
+  data/              generated results and exported models
+  vendor/            d3, Observable Plot, Atkinson Hyperlegible font (with licences)
+main.py              Desktop app (original Gatehouse version, fixed)
+tests/               pytest, Node and browser tests
+```
 
-### Logistic Regression
+## Running it
 
-- L2 regularisation
-- `liblinear` solver
-- Regularisation strength `C=0.1`
-- Balanced class weights
-- Maximum of 1,000 iterations
-- Fixed random seed for reproducibility
-
-The application reports both models' evaluation metrics and identifies the model with the higher test-set accuracy. The displayed results describe performance on the included dataset only and do not establish clinical validity.
-
-## Installation
-
-Python 3.8 or newer is recommended.
+Python 3.10 or newer is needed.
 
 ```bash
 git clone https://github.com/MrTsak/AI-Data-Analytics.git
 cd AI-Data-Analytics
-pip install -r requirements.txt
+pip install -r requirements-dev.txt
 ```
 
-## Running the application
+**Web version locally:**
+
+```bash
+python -m http.server -d web 8000
+# open http://localhost:8000
+```
+
+**Desktop version** (needs Tk; on Linux install `python3-tk`):
 
 ```bash
 python main.py
 ```
 
-The application expects the dataset at `data/sample.csv` relative to the project directory.
+**Regenerate the web data** after changing the pipeline or dataset:
 
-## Main views
+```bash
+python scripts/export_web.py
+```
+
+## Deploying to a website
+
+`web/` is a self-contained static site. It makes no external requests, uses only relative paths, and needs no build step. Copy the whole folder to your host under any path, for example:
+
+```
+your-site/
+  projects/
+    diabetes/   ← contents of web/
+```
+
+It then works at `https://your-site/projects/diabetes/`. Any static host works (plain HTML hosting, GitHub Pages, Netlify and so on).
+
+## How the browser predictions work
+
+Training happens in Python. `export_web.py` writes:
+
+- the Logistic Regression's scaler means and scales, coefficients and intercept (`model_lr.json`)
+- every Random Forest tree as compact arrays of split feature, threshold, children and leaf probability (`model_rf.json`, about 240 KB)
+
+`web/js/models.js` reimplements prediction for both, including scikit-learn's float32 input cast. A parity test checks that the browser's probabilities match scikit-learn's to within 1e-6 on 200 cases, including extreme values and inputs that sit exactly on split thresholds.
+
+## Tests
+
+```bash
+python -m pytest tests                 # pipeline, export, desktop (desktop tests need a display)
+xvfb-run -a python -m pytest tests     # include desktop tests on a headless Linux box
+node --test tests/js/*.test.mjs        # JS/Python parity + browser smoke test (Playwright)
+```
+
+The smoke test serves `web/` under `/projects/diabetes/`, checks that every chart renders, and checks that the predictor responds to input.
+
+## Licence
+
+MIT, see [LICENSE](LICENSE). Bundled third-party files in `web/vendor/` keep their own licences: d3 (ISC), Observable Plot (ISC), and Atkinson Hyperlegible (SIL Open Font License).

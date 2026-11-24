@@ -1,3 +1,6 @@
+@font-face { font-family: "Atkinson Hyperlegible"; font-style: normal; font-weight: 400; font-display: swap; src: url("vendor/fonts/atkinson-hyperlegible-latin-400-normal.woff2") format("woff2"); }
+@font-face { font-family: "Atkinson Hyperlegible"; font-style: normal; font-weight: 700; font-display: swap; src: url("vendor/fonts/atkinson-hyperlegible-latin-700-normal.woff2") format("woff2"); }
+@font-face { font-family: "Atkinson Hyperlegible"; font-style: italic; font-weight: 400; font-display: swap; src: url("vendor/fonts/atkinson-hyperlegible-latin-400-italic.woff2") format("woff2"); }
 :root {
   --paper: #f2f5f3;
   --surface: #ffffff;
@@ -128,16 +131,19 @@ input[type="range"] { width: 100%; accent-color: var(--ink); }
 .readout-name { font-size: .95rem; color: var(--ink-soft); margin: 0; }
 .readout-value { font-size: clamp(3rem, 8vw, 5.25rem); font-weight: 700; line-height: 1; letter-spacing: -0.03em; margin: .15rem 0; color: var(--band); }
 .readout-band { margin: 0; font-weight: 700; color: var(--band); }
-.scale { position: relative; height: 3.25rem; margin-top: .5rem; }
-.scale-track { position: absolute; inset: 1.1rem 0 auto; height: .7rem; border-radius: 999px; overflow: hidden; display: flex; }
+.scale { position: relative; height: 4.6rem; margin-top: .5rem; }
+.scale-track { position: absolute; top: 2.55rem; left: 0; right: 0; height: .7rem; border-radius: 999px; overflow: hidden; display: flex; }
 .scale-track span { height: 100%; }
-.scale-labels { position: absolute; inset: auto 0 0; display: flex; font-size: .82rem; color: var(--ink-soft); }
+.scale-labels { position: absolute; left: 0; right: 0; bottom: 0; display: flex; font-size: .82rem; color: var(--ink-soft); }
 .scale-labels span:nth-child(1) { width: 40%; }
 .scale-labels span:nth-child(2) { width: 30%; }
-.marker { position: absolute; top: 0; transform: translateX(-50%); font-size: .78rem; font-weight: 700; white-space: nowrap; transition: left .25s ease; }
-.marker::after { content: ""; display: block; width: 2px; height: 1.5rem; background: var(--ink); margin: .1rem auto 0; }
-.marker.lr { top: auto; bottom: 1.15rem; display: flex; flex-direction: column-reverse; }
-.marker.lr::after { margin: 0 auto .1rem; }
+.marker {
+  position: absolute; top: 0; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center;
+  font-size: .78rem; font-weight: 700; line-height: 1; white-space: nowrap; transition: left .25s ease;
+}
+.marker::after { content: ""; width: 2px; height: 2.1rem; background: var(--ink); margin-top: .2rem; }
+.marker.lr { top: 1.05rem; }
+.marker.lr::after { height: 1.05rem; }
 .drivers { font-size: .95rem; color: var(--ink-soft); }
 
 .findings-list { padding-left: 1.2rem; margin: 0 0 1.5rem; }
