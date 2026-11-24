@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Diabetes Risk Explorer</title>
+  <meta name="description" content="Explore 100,000 patient records, compare two machine-learning models and try a live diabetes-risk estimate. An educational data-analytics project.">
+  <link rel="stylesheet" href="styles.css">
+  <script src="vendor/d3.min.js"></script>
+  <script src="vendor/plot.umd.min.js"></script>
+  <script>
+    try { const t = localStorage.getItem('theme'); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
+  </script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="topbar">
+    <a class="brand" href="#top">Diabetes Risk Explorer</a>
+    <nav aria-label="Sections">
+      <a href="#explore">Explore</a>
+      <a href="#clusters">Clusters</a>
+      <a href="#models">Models</a>
+      <a href="#predict">Try it</a>
+    </nav>
+    <button class="theme-toggle" type="button" aria-label="Switch colour theme">Dark</button>
+  </header>
+
+  <main id="main">
+    <section class="hero" id="top">
+      <h1>What predicts diabetes in <span data-bind="n_rows">96,128</span> patient records?</h1>
+      <p class="lede" data-bind="hero-lede">Loading the analysis…</p>
+      <p class="hero-actions">
+        <a class="button" href="#predict">Try the risk estimator</a>
+        <a class="link" href="https://github.com/MrTsak/AI-Data-Analytics">Read the code on GitHub</a>
+      </p>
+      <p class="disclaimer">Educational project — not a medical device or diagnosis.</p>
+    </section>
+
+    <section class="block" id="explore" aria-labelledby="explore-h">
+      <div class="block-text">
+        <h2 id="explore-h">Explore the data</h2>
+        <p>Pick a measurement to compare patients with and without diabetes. Continuous values are shown as a share of each group, so the smaller diabetic group stays visible.</p>
+        <label class="field">
+          <span>Measurement</span>
+          <select id="feature-picker"></select>
+        </label>
+        <p class="note" id="feature-note"></p>
+      </div>
+      <figure class="block-chart" id="explore-chart" aria-live="polite"></figure>
+    </section>
+
+    <section class="block" aria-labelledby="corr-h">
+      <div class="block-text">
+        <h2 id="corr-h">How the measurements relate</h2>
+        <p>Pearson correlation between each pair of measurements and the diabetes outcome. The bottom row is the one to read first.</p>
+        <ul class="hypotheses" id="hypotheses"></ul>
+      </div>
+      <figure class="block-chart" id="corr-chart"></figure>
+    </section>
+
+    <section class="block" id="clusters" aria-labelledby="clusters-h">
+      <div class="block-text">
+        <h2 id="clusters-h">Patient groups</h2>
+        <p>K-means clustering on age, BMI and HbA1c finds three groups without being told who has diabetes. The diabetes rate per group is measured afterwards.</p>
+        <ol class="cluster-list" id="cluster-list" start="0"></ol>
+      </div>
+      <figure class="block-chart" id="cluster-chart"></figure>
+    </section>
+
+    <section class="block" id="models" aria-labelledby="models-h">
+      <div class="block-text">
+        <h2 id="models-h">Comparing the models</h2>
+        <p>Only <span data-bind="positive_pct">9%</span> of patients are diabetic, so a model can score high accuracy while missing real cases. The best model is picked by ROC-AUC, and recall shows how many diabetic patients each one finds.</p>
+        <table class="metrics" id="metrics-table"></table>
+      </div>
+      <div class="block-chart chart-stack">
+        <figure id="roc-chart"></figure>
+        <div class="confusions" id="confusion-charts"></div>
+        <figure id="importance-chart"></figure>
+      </div>
+    </section>
+
+    <section class="predict" id="predict" aria-labelledby="predict-h">
+      <div class="predict-head">
+        <h2 id="predict-h">Try the risk estimator</h2>
+        <p>Move the sliders and both models update instantly. They run in your browser; nothing you enter leaves this page.</p>
+      </div>
+      <div class="predict-grid">
+        <form class="predict-form" id="predict-form" novalidate></form>
+        <div class="predict-result" id="predict-result" aria-live="polite"></div>
+      </div>
+      <p class="disclaimer">Educational project — not a medical device or diagnosis. Training gives diabetic cases extra weight so the models don't ignore them, which pushes every percentage up: an average patient scores well above the 9% base rate. Use the estimator to compare how inputs change the estimate, not as anyone's actual risk.</p>
+    </section>
+
+    <section class="block findings" aria-labelledby="findings-h">
+      <div class="block-text">
+        <h2 id="findings-h">Findings and limitations</h2>
+      </div>
+      <div class="block-chart">
+        <ul class="findings-list" id="findings"></ul>
+        <p class="about">Built by <a href="https://tsakioan.com/">Ioannis Tsakalidis</a>. Originally a CustomTkinter desktop app for a Gatehouse Awards qualification, then rebuilt for the web. The Python pipeline, tests and the original desktop version are on <a href="https://github.com/MrTsak/AI-Data-Analytics">GitHub</a>.</p>
+      </div>
+    </section>
+  </main>
+
+  <p class="load-error" id="load-error" hidden>The analysis data didn't load. Check that the <code>data/</code> folder sits next to this page, then reload.</p>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
