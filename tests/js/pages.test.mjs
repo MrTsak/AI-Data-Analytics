@@ -47,7 +47,7 @@ test('link-preview images and the favicon exist', () => {
   for (const html of [en, el]) {
     const image = meta(html, 'og:image');
     assert.ok(image, 'og:image set');
-    const file = image.replace('https://tsakioan.com/projects/diabetes/', '');
+    const file = image.replace('https://tsakioan.com/projects/diabetes/', '').replace(/\?.*$/, '');
     assert.ok(existsSync(`${web}${file}`), `${file} exists in web/`);
   }
   assert.match(en, /rel="icon" href="favicon\.svg"/);
