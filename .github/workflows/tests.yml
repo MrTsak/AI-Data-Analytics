@@ -1,0 +1,25 @@
+name: Tests
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  javascript:
+    name: JavaScript and browser tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      # No package.json: install Playwright for this run only, plus the Chromium it drives.
+      - run: npm install --no-save --no-package-lock playwright@1.63.0
+      - run: npx playwright install --with-deps chromium
+      # REQUIRE_BROWSER makes the browser tests fail instead of skipping if Playwright is missing.
+      - run: node --test tests/js/*.test.mjs
+        env:
+          REQUIRE_BROWSER: "1"

@@ -31,6 +31,9 @@ const DEFAULT_NOTE = pick(
 const state = { data: null };
 const $ = (sel) => document.querySelector(sel);
 const cap = (s) => `${s.charAt(0).toUpperCase()}${s.slice(1)}`;
+// The page ships with these texts already filled in; rewriting identical text would repaint the
+// hero and count as a late largest paint, so only changed text is written.
+const setText = (el, text) => { if (el.textContent !== text) el.textContent = text; };
 
 async function loadData() {
   const entries = await Promise.all(FILES.map(async (name) => {
@@ -75,16 +78,16 @@ function clusterRest(rest) {
 function renderText(d) {
   const s = d.summary;
   const best = d.models.metrics[s.best];
-  document.querySelectorAll('[data-bind="n_rows"]').forEach((el) => { el.textContent = num(s.n_rows); });
-  document.querySelectorAll('[data-bind="positive_pct"]').forEach((el) => { el.textContent = pct(s.positive_rate, 1); });
-  $('[data-bind="hero-lede"]').textContent = pick(
+  document.querySelectorAll('[data-bind="n_rows"]').forEach((el) => setText(el, num(s.n_rows)));
+  document.querySelectorAll('[data-bind="positive_pct"]').forEach((el) => setText(el, pct(s.positive_rate, 1)));
+  setText($('[data-bind="hero-lede"]'), pick(
     `${num(s.n_original)} records went in. After removing ${num(s.n_duplicates)} exact duplicates, ` +
       `two models were trained to spot diabetes. The ${s.best} finds ${pct(best.recall, 0)} of diabetic patients it has never seen, ` +
       `with an ROC-AUC of ${num(best.auc, 3)}.`,
     `Η ανάλυση ξεκίνησε με ${num(s.n_original)} εγγραφές. Αφού αφαιρέθηκαν ${num(s.n_duplicates)} διπλότυπες, ` +
       `εκπαιδεύτηκαν δύο μοντέλα για τον εντοπισμό του διαβήτη. Το καλύτερο μοντέλο («${modelName(s.best)}») ` +
       `εντοπίζει το ${pct(best.recall, 0)} των διαβητικών ασθενών που δεν έχει ξαναδεί, με ROC-AUC ${num(best.auc, 3)}.`,
-  );
+  ));
 
   $('#hypotheses').replaceChildren(...HYPOTHESES.map(([text, url]) => {
     const li = document.createElement('li');
@@ -176,9 +179,13 @@ function renderExplore() {
   const c = charts.palette();
   const fig = document.createDocumentFragment();
   if (d.explore.histograms[feat]) {
-    fig.append(legend([['No diabetes', c.neg], ['Diabetes', c.pos]]), charts.histogram(d.explore.histograms[feat], feat, w));
+    const name = featureLabel(feat, LABELS);
+    fig.append(legend([['No diabetes', c.neg], ['Diabetes', c.pos]]), charts.describe(charts.histogram(d.explore.histograms[feat], feat, w),
+      pick(`Histogram of ${name} for patients with and without diabetes`, `Ιστόγραμμα: ${name} σε ασθενείς με και χωρίς διαβήτη`)));
   } else {
-    fig.append(charts.categoryRates(d.explore.categories[feat], feat, w));
+    const name = featureLabel(feat, LABELS);
+    fig.append(charts.describe(charts.categoryRates(d.explore.categories[feat], feat, w),
+      pick(`Diabetes rate by ${name.toLowerCase()}`, `Ποσοστό διαβήτη ανά κατηγορία: ${name}`)));
   }
   el.replaceChildren(fig);
   const notes = isGreek ? FEATURE_NOTES_EL : FEATURE_NOTES;
@@ -188,15 +195,20 @@ function renderExplore() {
 function renderCharts() {
   const d = state.data;
   renderExplore();
-  mount($('#corr-chart'), charts.correlationHeatmap(d.explore.correlation, widthOf($('#corr-chart'))));
-  mount($('#cluster-chart'), charts.clusterScatter(d.clusters.grid, widthOf($('#cluster-chart'))));
+  mount($('#corr-chart'), charts.describe(charts.correlationHeatmap(d.explore.correlation, widthOf($('#corr-chart'))),
+    pick('Correlation heatmap of the measurements and diabetes', 'Χάρτης συσχέτισης των μετρήσεων και του διαβήτη')));
+  mount($('#cluster-chart'), charts.describe(charts.clusterScatter(d.clusters.grid, widthOf($('#cluster-chart'))),
+    pick('Patient groups plotted by HbA1c and BMI', 'Ομάδες ασθενών κατά HbA1c και BMI')));
   const stack = $('#roc-chart');
-  mount(stack, charts.rocChart(d.models.metrics, MODEL_NAMES, widthOf(stack)));
+  mount(stack, charts.describe(charts.rocChart(d.models.metrics, MODEL_NAMES, widthOf(stack)),
+    pick('ROC curves of the two models', 'Καμπύλες ROC των δύο μοντέλων')));
   const conf = $('#confusion-charts');
   const cw = conf.getBoundingClientRect().width;
   const each = cw < 480 ? cw : (cw - 24) / 2;
-  conf.replaceChildren(...MODEL_NAMES.map((n) => charts.confusion(d.models.metrics[n].confusion, n, Math.max(260, each))));
-  mount($('#importance-chart'), charts.importanceBars(d.models.importances, widthOf($('#importance-chart'))));
+  conf.replaceChildren(...MODEL_NAMES.map((n) => charts.describe(charts.confusion(d.models.metrics[n].confusion, n, Math.max(260, each)),
+    pick(`Confusion matrix: ${modelName(n)}`, `Πίνακας σύγχυσης: ${modelName(n)}`))));
+  mount($('#importance-chart'), charts.describe(charts.importanceBars(d.models.importances, widthOf($('#importance-chart'))),
+    pick('Feature importance in the Random Forest', 'Σημασία χαρακτηριστικών στο Τυχαίο δάσος')));
   // cluster list colours follow the theme
   const c = charts.palette();
   document.querySelectorAll('#cluster-list li').forEach((li, i) => li.style.setProperty('--c', c.clusters[i]));
@@ -218,7 +230,11 @@ function currentTheme() {
 
 function setupTheme() {
   const btn = $('.theme-toggle');
-  const label = () => { btn.textContent = currentTheme() === 'dark' ? t('Light') : t('Dark'); };
+  const label = () => {
+    const text = currentTheme() === 'dark' ? t('Light') : t('Dark');
+    btn.textContent = text;
+    btn.setAttribute('aria-label', pick(`${text} theme`, `${text} θέμα`));
+  };
   label();
   btn.addEventListener('click', () => {
     const next = currentTheme() === 'dark' ? 'light' : 'dark';

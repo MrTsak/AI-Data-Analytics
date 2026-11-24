@@ -30,6 +30,20 @@ export function palette() {
   };
 }
 
+/**
+ * Give a chart one accessible name. Plot labels its internal groups ("rect", "tip"...), which is
+ * invalid on <g> and only noise for screen readers, so those labels are removed.
+ */
+export function describe(node, label) {
+  const svg = node.tagName.toLowerCase() === 'svg' ? node : node.querySelector(':scope > svg');
+  node.querySelectorAll('[aria-label]').forEach((el) => el.removeAttribute('aria-label'));
+  if (svg) {
+    svg.setAttribute('role', 'img');
+    svg.setAttribute('aria-label', label);
+  }
+  return node;
+}
+
 const base = (c, width) => ({
   width,
   style: { background: 'transparent', color: c.ink, fontFamily: 'inherit', fontSize: '13px' },

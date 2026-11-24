@@ -21,9 +21,11 @@
   <meta property="og:locale" content="en_US">
   <meta property="og:locale:alternate" content="el_GR">
   <meta name="twitter:card" content="summary_large_image">
+  <link rel="preload" href="vendor/fonts/atkinson-hyperlegible-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="vendor/fonts/atkinson-hyperlegible-latin-700-normal.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="styles.css">
-  <script src="vendor/d3.min.js"></script>
-  <script src="vendor/plot.umd.min.js"></script>
+  <script src="vendor/d3.min.js" defer></script>
+  <script src="vendor/plot.umd.min.js" defer></script>
   <script>
     try { const t = localStorage.getItem('theme'); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
   </script>
@@ -39,13 +41,13 @@
       <a href="#predict">Try it</a>
       <a href="el/" hreflang="el" lang="el">Ελληνικά</a>
     </nav>
-    <button class="theme-toggle" type="button" aria-label="Switch colour theme">Dark</button>
+    <button class="theme-toggle" type="button" aria-label="Dark theme">Dark</button>
   </header>
 
   <main id="main">
     <section class="hero" id="top">
       <h1>What predicts diabetes in <span data-bind="n_rows">96,128</span> records?</h1>
-      <p class="lede" data-bind="hero-lede">Loading the analysis…</p>
+      <p class="lede" data-bind="hero-lede">100,000 records went in. After removing 3,854 exact duplicates, two models were trained to spot diabetes. The Random Forest finds 68% of diabetic patients it has never seen, with an ROC-AUC of 0.963.</p>
       <p class="hero-actions">
         <a class="button" href="#predict">Try the risk estimator</a>
         <a class="link" href="https://github.com/MrTsak/AI-Data-Analytics">Read the code on GitHub</a>
@@ -87,7 +89,7 @@
     <section class="block" id="models" aria-labelledby="models-h">
       <div class="block-text">
         <h2 id="models-h">Comparing the models</h2>
-        <p>Only <span data-bind="positive_pct">9%</span> of patients are diabetic, so a model can score high accuracy while missing real cases. The best model is picked by ROC-AUC, and recall shows how many diabetic patients each one finds.</p>
+        <p>Only <span data-bind="positive_pct">8.8%</span> of patients are diabetic, so a model can score high accuracy while missing real cases. The best model is picked by ROC-AUC, and recall shows how many diabetic patients each one finds.</p>
         <table class="metrics" id="metrics-table"></table>
       </div>
       <div class="block-chart chart-stack">
