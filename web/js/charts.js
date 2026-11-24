@@ -102,16 +102,18 @@ export function correlationHeatmap(corr, width) {
   });
 }
 
-export function clusterScatter(sample, width) {
+// Each dot is a group of patients who share an HbA1c band, a BMI band and a cluster.
+// Its size shows how many patients it holds. Groups under 5 people are not published.
+export function clusterScatter(grid, width) {
   const c = palette();
   return Plot.plot({
     ...base(c, width), height: Math.min(440, width * 0.7),
     x: { label: 'HbA1c (%)', grid: true },
     y: { label: 'BMI', grid: true },
+    r: { range: [2, 12] },
     color: { domain: [0, 1, 2], range: c.clusters },
     marks: [
-      Plot.dot(sample, { x: (d) => d.HbA1c_level + (Math.sin(d.age * 12.9898) * 0.04), y: 'bmi',
-        fill: 'cluster', r: 2.2, fillOpacity: 0.55 }),
+      Plot.dot(grid, { x: 'HbA1c_level', y: 'bmi', fill: 'cluster', r: 'n', fillOpacity: 0.55 }),
     ],
   });
 }

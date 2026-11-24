@@ -39,9 +39,20 @@ On a held-out test set of 19,226 patients (stratified 80/20 split):
 
 Only 8.8% of patients are diabetic, so the best model is chosen by ROC-AUC rather than accuracy. Both models use balanced class weights. They catch most diabetic patients, but more than half of the patients they flag are false alarms (precision below 50%). That trade-off suits screening, where a follow-up test settles it. Because of the class weighting, the predicted percentages run high (an average patient scores well above the 8.8% base rate), so the live estimator is for comparing how inputs move the estimate, not for reading off anyone's actual risk. HbA1c and blood glucose carry most of the predictive signal.
 
+## Dataset
+
+The data file is **not included** in this repository. Its licence on Kaggle is "Data files © Original Authors", which does not grant permission to redistribute it, so the file is not published here.
+
+To run the analysis or the tests:
+
+1. Open the [Diabetes Prediction Dataset by iammustafatz on Kaggle](https://www.kaggle.com/datasets/iammustafatz/diabetes-prediction-dataset) and read its licence terms.
+2. Download the CSV file and save it in this repository as `data/sample.csv`. The file stays on your machine and is ignored by git.
+
+The published results in `web/data/` are summaries and models trained on the data. They contain no individual records: the cluster chart counts groups of at least 5 patients, and the browser parity test uses synthetic inputs.
+
 ## Data preparation
 
-The dataset (`data/sample.csv`) has 100,000 records with gender, age, hypertension, heart disease, smoking history, BMI, HbA1c, blood glucose and the diabetes outcome. Preparation steps:
+The dataset (`data/sample.csv`, not included, see below) has 100,000 records with gender, age, hypertension, heart disease, smoking history, BMI, HbA1c, blood glucose and the diabetes outcome. Preparation steps:
 
 - **3,854 exact duplicate rows are removed** before splitting, so identical records can't appear in both the training and test sets and inflate scores.
 - **18 records with gender "Other" are excluded.** That's too few to learn anything reliable from.
@@ -68,7 +79,7 @@ tests/               pytest, Node and browser tests
 
 ## Running it
 
-Python 3.10 or newer is needed.
+Python 3.10 or newer is needed. Add the dataset first (see [Dataset](#dataset)).
 
 ```bash
 git clone https://github.com/MrTsak/AI-Data-Analytics.git
@@ -117,6 +128,8 @@ Training happens in Python. `export_web.py` writes:
 `web/js/models.js` reimplements prediction for both, including scikit-learn's float32 input cast. A parity test checks that the browser's probabilities match scikit-learn's to within 1e-6 on 200 cases, including extreme values and inputs that sit exactly on split thresholds.
 
 ## Tests
+
+The tests and the export script need the dataset file in `data/sample.csv` (see [Dataset](#dataset)).
 
 ```bash
 python -m pytest tests                 # pipeline, export, desktop (desktop tests need a display)
