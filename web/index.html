@@ -93,6 +93,20 @@
       <p class="disclaimer">Educational project — not a medical device or diagnosis. The estimates describe this dataset only, have not been clinically validated, and are not anyone's actual risk.</p>
     </section>
 
+    <section class="block" aria-labelledby="method-h">
+      <div class="block-text">
+        <h2 id="method-h">How it was tested</h2>
+      </div>
+      <div class="block-chart">
+        <ul class="findings-list">
+          <li>The data: 100,000 records. 3,854 exact duplicates and 18 records with gender "Other" were removed, leaving 96,128. The records were split 80/20, stratified so both sets keep the same share of diabetic records.</li>
+          <li>The models: a random forest (150 trees, depth 7) and a logistic regression, both trained on the training set only. Missing values were filled with training-set averages, so the test set never influenced training.</li>
+          <li>Scoring: ROC-AUC picks the best model, because only 8.8% of records are diabetic and accuracy alone can look high while a model misses cases. Recall, precision and F1 are reported at a 0.5 cut-off.</li>
+          <li>Checks: the pipeline has automated tests. The browser predictor matched the Python models on 200 test inputs to within one part in a million.</li>
+          <li>What it cannot show: the records have no lifestyle, diet, family-history or genetic data, and their origin is not documented. Nothing has been validated clinically or on another population. This is a teaching tool, not a diagnosis, and neither model is suitable for screening.</li>
+        </ul>
+      </div>
+    </section>
     <section class="block findings" aria-labelledby="findings-h">
       <div class="block-text">
         <h2 id="findings-h">Findings and limitations</h2>
