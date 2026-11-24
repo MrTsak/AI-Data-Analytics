@@ -81,7 +81,7 @@ function renderText(d) {
     `${num(s.n_original)} records went in. After removing ${num(s.n_duplicates)} exact duplicates, ` +
       `two models were trained to spot diabetes. The ${s.best} finds ${pct(best.recall, 0)} of diabetic patients it has never seen, ` +
       `with an ROC-AUC of ${num(best.auc, 3)}.`,
-    `Μπήκαν ${num(s.n_original)} εγγραφές. Αφού αφαιρέθηκαν ${num(s.n_duplicates)} ακριβώς διπλές, ` +
+    `Η ανάλυση ξεκίνησε με ${num(s.n_original)} εγγραφές. Αφού αφαιρέθηκαν ${num(s.n_duplicates)} διπλότυπες, ` +
       `εκπαιδεύτηκαν δύο μοντέλα για τον εντοπισμό του διαβήτη. Το καλύτερο μοντέλο («${modelName(s.best)}») ` +
       `εντοπίζει το ${pct(best.recall, 0)} των διαβητικών ασθενών που δεν έχει ξαναδεί, με ROC-AUC ${num(best.auc, 3)}.`,
   );
@@ -157,7 +157,7 @@ function renderFindings(d) {
     ),
     pick(
       `${num(s.n_duplicates)} duplicate records and ${s.n_other_gender} records with gender "Other" (too few to model) were removed before training, so test scores aren't inflated by repeated rows.`,
-      `Αφαιρέθηκαν ${num(s.n_duplicates)} διπλές εγγραφές και ${s.n_other_gender} εγγραφές με φύλο «Άλλο» (πολύ λίγες για μοντελοποίηση) πριν από την εκπαίδευση, ώστε οι βαθμολογίες δοκιμής να μην φουσκώνουν από επαναλαμβανόμενες γραμμές.`,
+      `Αφαιρέθηκαν ${num(s.n_duplicates)} διπλότυπες εγγραφές και ${s.n_other_gender} εγγραφές με φύλο «Άλλο» (πολύ λίγες για μοντελοποίηση) πριν από την εκπαίδευση, ώστε οι επαναλαμβανόμενες εγγραφές να μην ανεβάζουν τεχνητά τις βαθμολογίες στη δοκιμή.`,
     ),
     pick(
       'The dataset has no lifestyle, diet, family-history or genetic data, and the results have not been clinically validated.',
