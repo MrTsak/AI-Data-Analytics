@@ -82,6 +82,11 @@ const GREEK = {
   Precision: 'Ακρίβεια θετικών (precision)',
   'F1 score': 'F1',
   Accuracy: 'Ακρίβεια (accuracy)',
+  // Predictor
+  Low: 'Χαμηλή',
+  Moderate: 'Μέτρια',
+  High: 'Υψηλή',
+  'Risk scale': 'Κλίμακα κινδύνου',
 };
 
 /** Static English text to Greek (unchanged on the English page). */
