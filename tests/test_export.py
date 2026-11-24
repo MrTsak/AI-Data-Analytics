@@ -29,12 +29,14 @@ def test_export_schema(out):
     assert set(ex["categories"]) == {"gender", "smoking_history", "hypertension", "heart_disease"}
     assert len(ex["correlation"]["matrix"]) == len(ex["correlation"]["labels"])
     cl = _load(d, "clusters.json")
-    assert len(cl["sample"]) == 3000 and len(cl["centers"]) == 3
+    assert len(cl["centers"]) == 3
+    assert cl["grid"] and all(g["n"] >= 5 for g in cl["grid"])
+    assert "sample" not in cl and sum(g["n"] for g in cl["grid"]) <= 96128
     assert {"metrics", "best", "importances", "lr_coefs"} <= _load(d, "models.json").keys()
     assert {"features", "mean", "scale", "coef", "intercept"} <= _load(d, "model_lr.json").keys()
     form = _load(d, "form.json")
     assert set(form["numeric"]) == {"age", "bmi", "HbA1c_level", "blood_glucose_level"}
-    assert len(_load(d, "parity.json")) == 200
+    assert len(_load(d, "parity.json")) == 198
 
 
 def test_rf_size_under_2mb(out):

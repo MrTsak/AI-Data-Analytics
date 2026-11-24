@@ -15,7 +15,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from analysis.clustering import cluster_patients  # noqa: E402
-from analysis.data import FEATURES, NUMERIC, SMOKING_LABELS, Dataset, load_dataset  # noqa: E402
+from analysis.data import FEATURES, NUMERIC, SMOKING_LABELS, SMOKING_LEVELS, Dataset, load_dataset  # noqa: E402
 from analysis.models import ModelResults, train_models  # noqa: E402
 
 FILES = ["summary.json", "explore.json", "clusters.json", "models.json", "model_lr.json",
@@ -65,17 +65,28 @@ def export_explore(ds: Dataset) -> dict:
             "correlation": {"labels": cols, "matrix": [_r(row, 3) for row in corr.to_numpy()]}}
 
 
+# Counts per (HbA1c, BMI, cluster) cell. Cells with fewer than MIN_CELL people are dropped, so no
+# individual record or near-individual group is published.
+MIN_CELL = 5
+
+
 def export_clusters(ds: Dataset) -> dict:
     c = cluster_patients(ds.raw, seed=SEED)
     df = ds.raw.assign(cluster=c.labels)
-    sample = df.sample(n=min(SCATTER, len(df)), random_state=SEED)
+    hba1c = pd.cut(df["HbA1c_level"], bins=np.arange(3.0, 9.5, 0.25), right=False)
+    bmi = pd.cut(df["bmi"], bins=np.arange(10.0, 100.0, 2.0), right=False)
+    mid = lambda i: round(i.mid, 3) if pd.notna(i) else np.nan
+    grid = (df.assign(h=hba1c.map(mid), b=bmi.map(mid))
+              .dropna(subset=["h", "b"])
+              .groupby(["h", "b", "cluster"])["diabetes"].agg(n="size", diabetes="sum")
+              .reset_index())
+    grid = grid[grid["n"] >= MIN_CELL]
     return {
         "centers": [{k: round(float(v), 2) for k, v in row.items()} for _, row in c.centers.iterrows()],
         "sizes": c.sizes, "diabetes_rate": _r(c.diabetes_rate),
         "descriptions": c.descriptions,
-        "sample": [{"HbA1c_level": float(r.HbA1c_level), "bmi": float(r.bmi), "age": float(r.age),
-                    "cluster": int(r.cluster), "diabetes": int(r.diabetes)}
-                   for r in sample.itertuples()],
+        "grid": [{"HbA1c_level": float(r.h), "bmi": float(r.b), "cluster": int(r.cluster),
+                  "n": int(r.n), "diabetes": int(r.diabetes)} for r in grid.itertuples()],
     }
 
 
@@ -140,16 +151,29 @@ def export_form(ds: Dataset) -> dict:
 
 
 def export_parity(ds: Dataset, res: ModelResults) -> list:
+    """Synthetic inputs only: no real patient row is published. Values are drawn uniformly
+    between each feature's observed range, so they cover the same space as real inputs."""
     rng = np.random.default_rng(SEED)
-    X = res.X_test.sample(n=190, random_state=SEED).copy()
+    n = 190
     lo, hi = ds.X.min(), ds.X.max()
-    extremes = [lo, hi, lo.where(np.arange(len(lo)) % 2 == 0, hi),
-                hi.where(np.arange(len(hi)) % 2 == 0, lo), (lo + hi) / 2]
-    X = pd.concat([X, pd.DataFrame(extremes)], ignore_index=True)
+    rows = []
+    for _ in range(n):
+        r = {"gender_male": float(rng.integers(0, 2)),
+             "hypertension": float(rng.integers(0, 2)), "heart_disease": float(rng.integers(0, 2))}
+        for col in CONTINUOUS:
+            r[col] = float(rng.uniform(lo[col], hi[col]))
+        level = rng.integers(0, len(SMOKING_LEVELS) + 1)  # last value = "No info" (all zeros)
+        for i, col in enumerate(SMOKING_LEVELS.values()):
+            r[col] = 1.0 if i == level else 0.0
+        rows.append(r)
+    X = pd.DataFrame(rows)
+    # Edge cases: all-minimum, all-maximum, and midpoint inputs.
+    edge = [lo, hi, (lo + hi) / 2]
+    X = pd.concat([X, pd.DataFrame(edge)], ignore_index=True)
     # Five cases with a feature exactly on an RF split threshold (tests the <= branch).
     for i in range(5):
         tree = res.rf.estimators_[i].tree_
-        row = res.X_test.iloc[int(rng.integers(len(res.X_test)))].copy()
+        row = X.iloc[int(rng.integers(len(X)))].copy()
         row.iloc[tree.feature[0]] = float(np.float32(tree.threshold[0]))
         X.loc[len(X)] = row
     X = X[FEATURES].astype(float)
