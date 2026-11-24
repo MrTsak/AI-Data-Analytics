@@ -117,20 +117,21 @@ export function setupPredictor(data) {
 
   function render() {
     const p = patient();
+    const prior = data.summary.positive_rate;
     const probs = {
       'Random Forest': predictRF(data.model_rf, vectorize(data.model_rf.features, p)),
       'Logistic Regression': predictLR(data.model_lr, vectorize(data.model_lr.features, p)),
     };
     for (const [name, prob] of Object.entries(probs)) {
-      const band = riskBand(prob);
+      const band = riskBand(prob, prior);
       const r = readouts[name];
       r.card.style.setProperty('--band', `var(${BAND_VAR[band]})`);
       r.value.textContent = formatProb(prob);
-      r.band.textContent = `${band} model probability`;
+      r.band.textContent = `${band} estimated probability`;
       markers[name].style.left = `${Math.min(98, Math.max(2, prob * 100))}%`;
     }
     drivers.textContent = explain(p);
-    const spoken = Object.entries(probs).map(([name, prob]) => `${name} ${formatProb(prob)}, ${riskBand(prob).toLowerCase()}`).join('; ');
+    const spoken = Object.entries(probs).map(([name, prob]) => `${name} ${formatProb(prob)}, ${riskBand(prob, prior).toLowerCase()}`).join('; ');
     scale.setAttribute('aria-label', `Risk scale: ${spoken}`);
     announce(spoken);
   }
