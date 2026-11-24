@@ -37,7 +37,7 @@ On a held-out test set of 19,226 patients (stratified 80/20 split):
 | F1 | **0.622** | 0.574 |
 | Accuracy | **0.906** | 0.885 |
 
-Only 8.8% of patients are diabetic, so the best model is chosen by ROC-AUC rather than accuracy. Both models use balanced class weights. They catch most diabetic patients at the cost of some false alarms, which is a sensible trade-off for a screening-style tool. HbA1c and blood glucose carry most of the predictive signal.
+Only 8.8% of patients are diabetic, so the best model is chosen by ROC-AUC rather than accuracy. Both models use balanced class weights. They catch most diabetic patients, but more than half of the patients they flag are false alarms (precision below 50%). That trade-off suits screening, where a follow-up test settles it. Because of the class weighting, the predicted percentages run high (an average patient scores well above the 8.8% base rate), so the live estimator is for comparing how inputs move the estimate, not for reading off anyone's actual risk. HbA1c and blood glucose carry most of the predictive signal.
 
 ## Data preparation
 
@@ -46,7 +46,7 @@ The dataset (`data/sample.csv`) has 100,000 records with gender, age, hypertensi
 - **3,854 exact duplicate rows are removed** before splitting, so identical records can't appear in both the training and test sets and inflate scores.
 - **18 records with gender "Other" are excluded.** That's too few to learn anything reliable from.
 - **Smoking history is one-hot encoded**, with "No info" as the baseline. Earlier versions used an arbitrary 0–5 number, which implied a false ordering.
-- Missing numeric values in a replacement dataset are filled with the column mean.
+- In a replacement dataset, rows with no diabetes outcome are dropped, missing yes/no values (hypertension, heart disease) take the most common value, missing continuous values take the column mean, and unknown smoking values count as "No info".
 
 ## Project structure
 
@@ -105,7 +105,7 @@ your-site/
     diabetes/   ← contents of web/
 ```
 
-It then works at `https://your-site/projects/diabetes/`. Any static host works (plain HTML hosting, GitHub Pages, Netlify and so on).
+It then works at `https://your-site/projects/diabetes/`. Link to it with the trailing slash, since some hosts don't add it automatically and the page's relative paths need it. Any static host works (plain HTML hosting, GitHub Pages, Netlify and so on).
 
 ## How the browser predictions work
 

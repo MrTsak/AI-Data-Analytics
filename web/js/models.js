@@ -57,3 +57,25 @@ export function clampInput(value, { min, max, mean }) {
   if (!Number.isFinite(n)) return mean;
   return Math.min(max, Math.max(min, n));
 }
+
+/** Features that push the logistic-regression score up most versus an average patient.
+ *  Smoking categories are left out: their coefficients mostly reflect who has no smoking
+ *  record (largely children) rather than an effect of smoking, so naming them misleads. */
+export function explainLR(model, x, { threshold = 0.15, limit = 2 } = {}) {
+  return model.features
+    .map((f, i) => ({ f, c: model.coef[i] * ((x[i] - model.mean[i]) / model.scale[i]) }))
+    .filter((d) => !d.f.startsWith('smoking_') && d.c > threshold)
+    .sort((a, b) => b.c - a.c)
+    .slice(0, limit)
+    .map((d) => d.f);
+}
+
+/** Slider bounds and start value aligned to the step, so arrow keys land on round values. */
+export function stepAlign({ p01, p99, mean, step }) {
+  const decimals = step < 1 ? 1 : 0;
+  const round = (v) => Number(v.toFixed(decimals));
+  const lo = round(Math.floor(p01 / step + 1e-9) * step);
+  const hi = round(Math.ceil(p99 / step - 1e-9) * step);
+  const start = round(Math.min(hi, Math.max(lo, Math.round(mean / step) * step)));
+  return { lo, hi, start };
+}

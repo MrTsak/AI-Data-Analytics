@@ -48,3 +48,18 @@ def test_load_handles_missing_values(tmp_path):
     ds = load_dataset(csv)
     assert not ds.X.isna().any().any()
     assert ds.X["bmi"].iloc[0] == 25.0
+
+
+def test_missing_target_dropped_and_binary_stays_binary(tmp_path):
+    csv = tmp_path / "d.csv"
+    csv.write_text(
+        "gender,age,hypertension,heart_disease,smoking_history,bmi,HbA1c_level,blood_glucose_level,diabetes\n"
+        "Female,50,0,0,never,30,6.0,140,\n"
+        "Male,30,,0,current,25.0,5.0,100,0\n"
+        "Male,60,1,0,former,28.0,6.5,180,1\n"
+        "Female,40,0,1,never,22.0,5.5,120,0\n"
+    )
+    ds = load_dataset(csv)
+    assert len(ds.raw) == 3
+    assert set(ds.raw["diabetes"]) <= {0, 1}
+    assert set(ds.X["hypertension"]) <= {0.0, 1.0}
