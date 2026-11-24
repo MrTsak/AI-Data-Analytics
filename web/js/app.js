@@ -1,6 +1,7 @@
 import * as charts from './charts.js';
 import { LABELS } from './charts.js';
 import { setupPredictor } from './predictor.js';
+import { t, pick, pct, num, modelName, featureLabel, isGreek } from './i18n.js';
 
 const MODEL_NAMES = ['Random Forest', 'Logistic Regression'];
 const FILES = ['summary', 'explore', 'clusters', 'models', 'model_lr', 'model_rf', 'form'];
@@ -16,10 +17,20 @@ const FEATURE_NOTES = {
   bmi: 'The many patients at exactly 27.32 are records where BMI was filled in with the dataset average.',
   age: 'Diabetes is rare under 40 in this dataset and rises steadily with age.',
 };
+const FEATURE_NOTES_EL = {
+  HbA1c_level: 'Η τιμή HbA1c 6,5% ή άνω είναι τυπικό διαγνωστικό όριο, γι’ αυτό η ομάδα με διαβήτη βρίσκεται δεξιότερα.',
+  blood_glucose_level: 'Οι διαβητικοί ασθενείς συγκεντρώνονται σε υψηλότερες τιμές γλυκόζης, με μακριά ουρά πάνω από 200 mg/dL.',
+  bmi: 'Οι πολλοί ασθενείς με ακριβώς 27,32 είναι εγγραφές όπου το BMI συμπληρώθηκε με τον μέσο όρο του συνόλου δεδομένων.',
+  age: 'Ο διαβήτης είναι σπάνιος κάτω των 40 ετών σε αυτό το σύνολο και αυξάνεται σταθερά με την ηλικία.',
+};
+const DEFAULT_NOTE = pick(
+  'Bars show the share of patients in each category who have diabetes.',
+  'Οι μπάρες δείχνουν το ποσοστό των ασθενών σε κάθε κατηγορία που έχουν διαβήτη.',
+);
 
 const state = { data: null };
 const $ = (sel) => document.querySelector(sel);
-const fmtPct = (v, d = 1) => `${(v * 100).toFixed(d)}%`;
+const cap = (s) => `${s.charAt(0).toUpperCase()}${s.slice(1)}`;
 
 async function loadData() {
   const entries = await Promise.all(FILES.map(async (name) => {
@@ -44,28 +55,42 @@ function legend(items) {
   for (const [label, color] of items) {
     const s = document.createElement('span');
     s.innerHTML = `<i class="swatch" style="background:${color}"></i>`;
-    s.append(label);
+    s.append(t(label));
     p.append(s);
   }
   return p;
+}
+
+// The cluster descriptions are English sentences built from clusters.json. On the Greek page the
+// same figures are reused and the sentence is rebuilt in Greek.
+function clusterRest(rest) {
+  if (!isGreek) return rest;
+  const m = rest.match(/avg age ([\d.]+), BMI ([\d.]+), HbA1c ([\d.]+)% — diabetes rate ([\d.]+)%/);
+  if (!m) return rest;
+  const dec = (v) => v.replace('.', ',');
+  return `μέση ηλικία ${m[1]}, BMI ${dec(m[2])}, HbA1c ${dec(m[3])}% — ποσοστό διαβήτη ${dec(m[4])}%`;
 }
 
 // ---------- static text ----------
 function renderText(d) {
   const s = d.summary;
   const best = d.models.metrics[s.best];
-  document.querySelectorAll('[data-bind="n_rows"]').forEach((el) => { el.textContent = s.n_rows.toLocaleString(); });
-  document.querySelectorAll('[data-bind="positive_pct"]').forEach((el) => { el.textContent = fmtPct(s.positive_rate, 1); });
-  $('[data-bind="hero-lede"]').textContent =
-    `${s.n_original.toLocaleString()} records went in. After removing ${s.n_duplicates.toLocaleString()} exact duplicates, ` +
-    `two models were trained to spot diabetes. The ${s.best} finds ${fmtPct(best.recall, 0)} of diabetic patients it has never seen, ` +
-    `with an ROC-AUC of ${best.auc.toFixed(3)}.`;
+  document.querySelectorAll('[data-bind="n_rows"]').forEach((el) => { el.textContent = num(s.n_rows); });
+  document.querySelectorAll('[data-bind="positive_pct"]').forEach((el) => { el.textContent = pct(s.positive_rate, 1); });
+  $('[data-bind="hero-lede"]').textContent = pick(
+    `${num(s.n_original)} records went in. After removing ${num(s.n_duplicates)} exact duplicates, ` +
+      `two models were trained to spot diabetes. The ${s.best} finds ${pct(best.recall, 0)} of diabetic patients it has never seen, ` +
+      `with an ROC-AUC of ${num(best.auc, 3)}.`,
+    `Μπήκαν ${num(s.n_original)} εγγραφές. Αφού αφαιρέθηκαν ${num(s.n_duplicates)} ακριβώς διπλές, ` +
+      `εκπαιδεύτηκαν δύο μοντέλα για τον εντοπισμό του διαβήτη. Το καλύτερο μοντέλο («${modelName(s.best)}») ` +
+      `εντοπίζει το ${pct(best.recall, 0)} των διαβητικών ασθενών που δεν έχει ξαναδεί, με ROC-AUC ${num(best.auc, 3)}.`,
+  );
 
   $('#hypotheses').replaceChildren(...HYPOTHESES.map(([text, url]) => {
     const li = document.createElement('li');
-    li.append(`${text} `);
+    li.append(`${t(text)} `);
     const a = document.createElement('a');
-    a.href = url; a.textContent = 'source'; a.rel = 'noopener'; a.target = '_blank';
+    a.href = url; a.textContent = t('source'); a.rel = 'noopener'; a.target = '_blank';
     li.append('(', a, ')');
     return li;
   }));
@@ -76,9 +101,10 @@ function renderText(d) {
     li.style.setProperty('--c', c.clusters[i]);
     const [tag, rest] = text.split(': ');
     const strong = document.createElement('strong');
-    strong.textContent = `Group ${i + 1}: ${tag.toLowerCase()}`;
+    const tagText = isGreek ? t(tag) : tag.toLowerCase();
+    strong.textContent = `${pick('Group', 'Ομάδα')} ${i + 1}: ${tagText}`;
     const span = document.createElement('span');
-    span.textContent = `${d.clusters.sizes[i].toLocaleString()} patients. ${rest.charAt(0).toUpperCase()}${rest.slice(1)}.`;
+    span.textContent = `${num(d.clusters.sizes[i])} ${pick('patients', 'ασθενείς')}. ${cap(clusterRest(rest))}.`;
     li.append(strong, span);
     return li;
   }));
@@ -89,11 +115,11 @@ function renderText(d) {
 
 function renderMetricsTable(models) {
   const rows = [['auc', 'ROC-AUC'], ['recall', 'Recall'], ['precision', 'Precision'], ['f1', 'F1 score'], ['accuracy', 'Accuracy']];
-  const head = `<thead><tr><th scope="col">Metric</th>${MODEL_NAMES.map((n) => `<th scope="col">${n}</th>`).join('')}</tr></thead>`;
+  const head = `<thead><tr><th scope="col">${t('Metric')}</th>${MODEL_NAMES.map((n) => `<th scope="col">${modelName(n)}</th>`).join('')}</tr></thead>`;
   const body = rows.map(([key, label]) => {
     const vals = MODEL_NAMES.map((n) => models.metrics[n][key]);
     const max = Math.max(...vals);
-    return `<tr><th scope="row">${label}</th>${vals.map((v) => `<td class="${v === max ? 'best' : ''}">${v.toFixed(3)}</td>`).join('')}</tr>`;
+    return `<tr><th scope="row">${t(label)}</th>${vals.map((v) => `<td class="${v === max ? 'best' : ''}">${num(v, 3)}</td>`).join('')}</tr>`;
   }).join('');
   $('#metrics-table').innerHTML = `${head}<tbody>${body}</tbody>`;
 }
@@ -101,20 +127,44 @@ function renderMetricsTable(models) {
 function renderFindings(d) {
   const s = d.summary;
   const m = d.models.metrics;
-  const plain = { HbA1c_level: 'HbA1c', blood_glucose_level: 'blood glucose', age: 'age', bmi: 'BMI' };
+  const plain = isGreek
+    ? { HbA1c_level: 'HbA1c', blood_glucose_level: 'γλυκόζη αίματος', age: 'ηλικία', bmi: 'BMI' }
+    : { HbA1c_level: 'HbA1c', blood_glucose_level: 'blood glucose', age: 'age', bmi: 'BMI' };
+  const topName = (f) => plain[f] ?? (isGreek ? featureLabel(f, LABELS) : LABELS[f].toLowerCase());
   const top = Object.entries(d.models.importances).sort((a, b) => b[1] - a[1]).slice(0, 2)
-    .map(([f]) => plain[f] ?? LABELS[f].toLowerCase());
+    .map(([f]) => topName(f));
   const rates = d.clusters.diabetes_rate;
   const hi = rates.indexOf(Math.max(...rates));
   const other = MODEL_NAMES.find((n) => n !== s.best);
+  const weakRecall = Math.max(m[s.best].recall, m[other].recall) < 0.9;
   const items = [
-    `${top[0].charAt(0).toUpperCase()}${top[0].slice(1)} and ${top[1]} carry most of the predictive signal. Together they account for most of the Random Forest's feature importance.`,
-    `The ${s.best} edges out ${other} (AUC ${m[s.best].auc.toFixed(3)} vs ${m[other].auc.toFixed(3)}). It finds ${fmtPct(m[s.best].recall, 0)} of diabetic patients, and ${fmtPct(m[s.best].precision, 0)} of the patients it flags are diabetic. ${other} finds ${fmtPct(m[other].recall, 0)}, with ${fmtPct(m[other].precision, 0)} of its flags diabetic. ${Math.max(m[s.best].recall, m[other].recall) < 0.9 ? 'Each model misses a sizable share of diabetic patients, so neither is suitable for screening.' : 'Both models find most diabetic patients.'}`,
-    `Group ${hi + 1} has a diabetes rate of ${fmtPct(rates[hi])}, against ${fmtPct(s.positive_rate)} overall. Clustering alone picks out a high-risk population.`,
-    `${s.n_duplicates.toLocaleString()} duplicate records and ${s.n_other_gender} records with gender "Other" (too few to model) were removed before training, so test scores aren't inflated by repeated rows.`,
-    'The dataset has no lifestyle, diet, family-history or genetic data, and the results have not been clinically validated.',
+    pick(
+      `${cap(top[0])} and ${top[1]} carry most of the predictive signal. Together they account for most of the Random Forest's feature importance.`,
+      `Τα δύο σημαντικότερα χαρακτηριστικά είναι ${top[0]} και ${top[1]}. Μαζί εξηγούν το μεγαλύτερο μέρος της σημασίας χαρακτηριστικών του Τυχαίου δάσους.`,
+    ),
+    pick(
+      `The ${s.best} edges out ${other} (AUC ${num(m[s.best].auc, 3)} vs ${num(m[other].auc, 3)}). It finds ${pct(m[s.best].recall, 0)} of diabetic patients, and ${pct(m[s.best].precision, 0)} of the patients it flags are diabetic. ${other} finds ${pct(m[other].recall, 0)}, with ${pct(m[other].precision, 0)} of its flags diabetic. ${weakRecall ? 'Each model misses a sizable share of diabetic patients, so neither is suitable for screening.' : 'Both models find most diabetic patients.'}`,
+      `Το μοντέλο «${modelName(s.best)}» ξεπερνά ελαφρά το μοντέλο «${modelName(other)}» (AUC ${num(m[s.best].auc, 3)} έναντι ${num(m[other].auc, 3)}). ` +
+        `Εντοπίζει το ${pct(m[s.best].recall, 0)} των διαβητικών ασθενών, και το ${pct(m[s.best].precision, 0)} όσων επισημαίνει είναι διαβητικοί. ` +
+        `Το «${modelName(other)}» εντοπίζει το ${pct(m[other].recall, 0)}, και το ${pct(m[other].precision, 0)} των επισημάνσεών του είναι διαβητικές. ` +
+        (weakRecall
+          ? 'Κάθε μοντέλο χάνει ένα σημαντικό μέρος των διαβητικών ασθενών, οπότε κανένα δεν είναι κατάλληλο για έλεγχο.'
+          : 'Και τα δύο μοντέλα εντοπίζουν τους περισσότερους διαβητικούς ασθενείς.'),
+    ),
+    pick(
+      `Group ${hi + 1} has a diabetes rate of ${pct(rates[hi])}, against ${pct(s.positive_rate)} overall. Clustering alone picks out a high-risk population.`,
+      `Η ομάδα ${hi + 1} έχει ποσοστό διαβήτη ${pct(rates[hi])}, έναντι ${pct(s.positive_rate)} συνολικά. Η ομαδοποίηση από μόνη της εντοπίζει έναν πληθυσμό υψηλού κινδύνου.`,
+    ),
+    pick(
+      `${num(s.n_duplicates)} duplicate records and ${s.n_other_gender} records with gender "Other" (too few to model) were removed before training, so test scores aren't inflated by repeated rows.`,
+      `Αφαιρέθηκαν ${num(s.n_duplicates)} διπλές εγγραφές και ${s.n_other_gender} εγγραφές με φύλο «Άλλο» (πολύ λίγες για μοντελοποίηση) πριν από την εκπαίδευση, ώστε οι βαθμολογίες δοκιμής να μην φουσκώνουν από επαναλαμβανόμενες γραμμές.`,
+    ),
+    pick(
+      'The dataset has no lifestyle, diet, family-history or genetic data, and the results have not been clinically validated.',
+      'Το σύνολο δεδομένων δεν περιέχει στοιχεία τρόπου ζωής, διατροφής, οικογενειακού ιστορικού ή γονιδιακά στοιχεία, και τα αποτελέσματα δεν έχουν επικυρωθεί κλινικά.',
+    ),
   ];
-  $('#findings').replaceChildren(...items.map((t) => Object.assign(document.createElement('li'), { textContent: t })));
+  $('#findings').replaceChildren(...items.map((text) => Object.assign(document.createElement('li'), { textContent: text })));
 }
 
 // ---------- charts ----------
@@ -131,7 +181,8 @@ function renderExplore() {
     fig.append(charts.categoryRates(d.explore.categories[feat], feat, w));
   }
   el.replaceChildren(fig);
-  $('#feature-note').textContent = FEATURE_NOTES[feat] ?? 'Bars show the share of patients in each category who have diabetes.';
+  const notes = isGreek ? FEATURE_NOTES_EL : FEATURE_NOTES;
+  $('#feature-note').textContent = notes[feat] ?? DEFAULT_NOTE;
 }
 
 function renderCharts() {
@@ -154,7 +205,7 @@ function renderCharts() {
 function setupPicker() {
   const picker = $('#feature-picker');
   const options = ['HbA1c_level', 'blood_glucose_level', 'bmi', 'age', 'hypertension', 'heart_disease', 'smoking_history', 'gender'];
-  picker.replaceChildren(...options.map((f) => new Option(LABELS[f], f)));
+  picker.replaceChildren(...options.map((f) => new Option(featureLabel(f, LABELS), f)));
   picker.addEventListener('change', renderExplore);
 }
 
@@ -167,7 +218,7 @@ function currentTheme() {
 
 function setupTheme() {
   const btn = $('.theme-toggle');
-  const label = () => { btn.textContent = currentTheme() === 'dark' ? 'Light' : 'Dark'; };
+  const label = () => { btn.textContent = currentTheme() === 'dark' ? t('Light') : t('Dark'); };
   label();
   btn.addEventListener('click', () => {
     const next = currentTheme() === 'dark' ? 'light' : 'dark';
@@ -180,8 +231,8 @@ function setupTheme() {
 }
 
 function debounce(fn, ms) {
-  let t;
-  return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); };
+  let timer;
+  return (...a) => { clearTimeout(timer); timer = setTimeout(() => fn(...a), ms); };
 }
 
 async function init() {
