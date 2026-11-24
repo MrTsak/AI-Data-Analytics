@@ -52,6 +52,8 @@ p { margin: 0 0 1em; max-width: 62ch; }
   padding: .75rem max(16px, calc((100vw - 1160px) / 2)); background: color-mix(in srgb, var(--paper) 92%, transparent);
   backdrop-filter: blur(6px); border-bottom: 1px solid var(--rule);
 }
+.home-link { color: var(--ink-soft); text-decoration: none; white-space: nowrap; padding-right: 1.5rem; border-right: 1px solid var(--rule); }
+.home-link:hover { color: var(--ink); text-decoration: underline; }
 .brand { font-weight: 700; text-decoration: none; }
 .topbar nav { display: flex; gap: 1.1rem; margin-left: auto; }
 .topbar nav a { text-decoration: none; color: var(--ink-soft); }
@@ -159,6 +161,12 @@ input[type="range"] { width: 100%; accent-color: var(--ink); }
   .topbar nav { order: 3; flex-basis: 100%; margin-left: 0; overflow-x: auto; gap: 1.25rem; font-size: .95rem; padding-bottom: .1rem; }
   .topbar nav a { white-space: nowrap; }
   html { scroll-padding-top: 6.5rem; }
+}
+/* Small screens: the hero headline names the page, so the top bar keeps only the way back,
+   the theme switch and the section links. */
+@media (max-width: 600px) {
+  .topbar .brand { display: none; }
+  .home-link { padding-right: 0; border-right: 0; }
 }
 @media (max-width: 480px) {
   .readouts, .confusions { grid-template-columns: minmax(0, 1fr); }
