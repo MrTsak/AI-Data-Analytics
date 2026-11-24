@@ -41,6 +41,8 @@ Only 8.8% of patients are diabetic, so the best model is chosen by ROC-AUC rathe
 
 ## Dataset
 
+The dataset’s origin is not documented, so treat the results as illustrative.
+
 The data file is **not included** in this repository. Its licence on Kaggle is "Data files © Original Authors", which does not grant permission to redistribute it, so the file is not published here.
 
 To run the analysis or the tests:
