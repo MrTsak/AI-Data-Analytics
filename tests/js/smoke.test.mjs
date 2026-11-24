@@ -15,6 +15,8 @@ try {
 } catch {
   try { ({ chromium } = require('/opt/node-tools/node_modules/playwright')); } catch { chromium = null; }
 }
+// In CI the browser tests must run: fail loudly rather than skip.
+if (!chromium && process.env.REQUIRE_BROWSER) throw new Error('REQUIRE_BROWSER is set but Playwright is not installed');
 
 const WEB_ROOT = process.env.WEB_ROOT || fileURLToPath(new URL('../../web/', import.meta.url));
 const PREFIX = '/projects/diabetes/';
