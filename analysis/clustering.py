@@ -23,7 +23,8 @@ class ClusterResult:
 
 def cluster_patients(raw: pd.DataFrame, seed: int = 42, k: int = 3) -> ClusterResult:
     scaler = StandardScaler()
-    scaled = scaler.fit_transform(raw[CLUSTER_FEATURES])
+    features = raw[CLUSTER_FEATURES].fillna(raw[CLUSTER_FEATURES].mean())
+    scaled = scaler.fit_transform(features)
     km = KMeans(n_clusters=k, n_init=10, random_state=seed).fit(scaled)
     centers = scaler.inverse_transform(km.cluster_centers_)
     # K-means label numbers are arbitrary; reorder by mean HbA1c (then age) so cluster 0

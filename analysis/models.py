@@ -25,6 +25,8 @@ class ModelResults:
     rf: RandomForestClassifier
     lr: Pipeline
     X_test: pd.DataFrame
+    X_train_raw: pd.DataFrame
+    fill_values: pd.Series
     y_test: pd.Series
     metrics: dict
     best: str
@@ -55,6 +57,9 @@ def _evaluate(model, X, y) -> dict:
 def train_models(ds: Dataset) -> ModelResults:
     X_train, X_test, y_train, y_test = train_test_split(
         ds.X, ds.y, test_size=0.2, random_state=SEED, stratify=ds.y)
+    X_train_raw = X_train
+    fill_values = X_train.mean()
+    X_train, X_test = X_train.fillna(fill_values), X_test.fillna(fill_values)
     rf = RandomForestClassifier(n_estimators=150, max_depth=7, min_samples_split=8,
                                 class_weight="balanced", random_state=SEED, n_jobs=-1)
     rf.fit(X_train, y_train)
@@ -66,4 +71,4 @@ def train_models(ds: Dataset) -> ModelResults:
     lr.fit(X_train, y_train)
     metrics = {RF_NAME: _evaluate(rf, X_test, y_test), LR_NAME: _evaluate(lr, X_test, y_test)}
     best = max(MODEL_NAMES, key=lambda n: metrics[n]["auc"])
-    return ModelResults(rf, lr, X_test, y_test, metrics, best)
+    return ModelResults(rf, lr, X_test, X_train_raw, fill_values, y_test, metrics, best)

@@ -46,7 +46,7 @@ The dataset (`data/sample.csv`) has 100,000 records with gender, age, hypertensi
 - **3,854 exact duplicate rows are removed** before splitting, so identical records can't appear in both the training and test sets and inflate scores.
 - **18 records with gender "Other" are excluded.** That's too few to learn anything reliable from.
 - **Smoking history is one-hot encoded**, with "No info" as the baseline. Earlier versions used an arbitrary 0–5 number, which implied a false ordering.
-- In a replacement dataset, rows with no diabetes outcome are dropped, missing yes/no values (hypertension, heart disease) take the most common value, missing continuous values take the column mean, and unknown smoking values count as "No info".
+- In a replacement dataset, rows with no diabetes outcome are dropped, missing yes/no values (hypertension, heart disease) take the most common value, missing continuous values are filled with the training-set mean after the split (so test rows never influence it), blank or unrecognised genders are excluded like "Other", and unknown smoking values count as "No info".
 
 ## Project structure
 
