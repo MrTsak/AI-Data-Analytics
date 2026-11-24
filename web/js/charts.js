@@ -100,23 +100,32 @@ export function categoryRates(cat, key, width) {
   });
 }
 
+// Short names without units for the correlation grid, which has little room on a phone.
+const CORR_LABELS = {
+  age: 'Age', hypertension: 'Hypertension', heart_disease: 'Heart disease', bmi: 'BMI',
+  HbA1c_level: 'HbA1c', blood_glucose_level: 'Blood glucose', diabetes: 'Diabetes',
+};
+
 export function correlationHeatmap(corr, width) {
   const c = palette();
   const n = corr.labels.length;
+  const name = (key) => featureLabel(key, CORR_LABELS);
   const rows = [];
   for (let i = 0; i < n; i++) {
     for (let j = 0; j <= i; j++) {
-      rows.push({ a: featureLabel(corr.labels[j], LABELS), b: featureLabel(corr.labels[i], LABELS), r: corr.matrix[i][j] });
+      rows.push({ a: name(corr.labels[j]), b: name(corr.labels[i]), r: corr.matrix[i][j] });
     }
   }
-  const names = corr.labels.map((l) => featureLabel(l, LABELS));
+  const names = corr.labels.map(name);
   const size = Math.min(width, 620);
+  // Leave room for the longest row label (the Greek ones are longer), then fit the cells to what is left.
+  const marginLeft = Math.ceil(16 + Math.max(...names.map((name) => name.length)) * 6.8);
   // On narrow screens the cells shrink, so drop the leading zero (".26") and use smaller text.
-  const cell = (size - 150 - 20) / n;
+  const cell = (size - marginLeft - 20) / n;
   const fontSize = cell < 44 ? 10 : 11;
   const short = (r) => (r === 1 ? '1' : num(r, 2).replace(/^(-?)0(?=[.,])/, '$1'));
   return Plot.plot({
-    ...base(c, size), height: size * 0.9, marginLeft: 150, marginBottom: 110,
+    ...base(c, size), height: size * 0.9, marginLeft, marginBottom: 110,
     x: { domain: names, label: null, tickRotate: -35 },
     y: { domain: names, label: null },
     color: { type: 'diverging', scheme: 'RdBu', domain: [-1, 1], reverse: true },
