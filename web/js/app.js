@@ -1,5 +1,6 @@
 import * as charts from './charts.js';
 import { LABELS } from './charts.js';
+import { setupPredictor } from './predictor.js';
 
 const MODEL_NAMES = ['Random Forest', 'Logistic Regression'];
 const FILES = ['summary', 'explore', 'clusters', 'models', 'model_lr', 'model_rf', 'form'];
@@ -193,6 +194,7 @@ async function init() {
   setupTheme();
   renderText(state.data);
   renderCharts();
+  setupPredictor(state.data);
   let lastWidth = innerWidth;
   addEventListener('resize', debounce(() => {
     if (innerWidth !== lastWidth) { lastWidth = innerWidth; renderCharts(); }
