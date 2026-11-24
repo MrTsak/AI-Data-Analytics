@@ -57,7 +57,7 @@ function renderText(d) {
   document.querySelectorAll('[data-bind="n_rows"]').forEach((el) => { el.textContent = s.n_rows.toLocaleString(); });
   document.querySelectorAll('[data-bind="positive_pct"]').forEach((el) => { el.textContent = fmtPct(s.positive_rate, 1); });
   $('[data-bind="hero-lede"]').textContent =
-    `${s.n_original.toLocaleString()} anonymised health records went in. After removing ${s.n_duplicates.toLocaleString()} exact duplicates, ` +
+    `${s.n_original.toLocaleString()} records went in. After removing ${s.n_duplicates.toLocaleString()} exact duplicates, ` +
     `two models were trained to spot diabetes. The ${s.best} finds ${fmtPct(best.recall, 0)} of diabetic patients it has never seen, ` +
     `with an ROC-AUC of ${best.auc.toFixed(3)}.`;
 
