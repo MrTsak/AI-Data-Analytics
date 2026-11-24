@@ -64,7 +64,7 @@ test('dashboard renders under a sub-path and the predictor responds', { skip: !c
 
     // Review fixes: honest copy, no smoking in the explanation, step-aligned inputs.
     const findings = await page.textContent('#findings');
-    assert.match(findings, /more than half of the patients it flags are false alarms/);
+    assert.match(findings, /neither is suitable for screening/);
     assert.match(await page.textContent('#predict'), /describe this dataset only/);
     await page.selectOption('#in-smoking', 'never');
     assert.doesNotMatch(await page.textContent('.drivers'), /smok/i);
