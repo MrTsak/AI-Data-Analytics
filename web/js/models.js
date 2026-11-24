@@ -54,7 +54,8 @@ export function riskBand(p) {
 /** Parse a typed value; empty or invalid falls back to the mean, out-of-range is clamped. */
 export function clampInput(value, { min, max, mean }) {
   const n = typeof value === 'number' ? value : parseFloat(String(value).trim());
-  if (!Number.isFinite(n)) return mean;
+  if (Number.isNaN(n)) return mean;
+  // Infinity (e.g. '1e400') clamps like any other out-of-range value.
   return Math.min(max, Math.max(min, n));
 }
 

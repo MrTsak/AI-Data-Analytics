@@ -130,6 +130,17 @@ export function setupPredictor(data) {
       markers[name].style.left = `${Math.min(98, Math.max(2, prob * 100))}%`;
     }
     drivers.textContent = explain(p);
+    const spoken = Object.entries(probs).map(([name, prob]) => `${name} ${formatProb(prob)}, ${riskBand(prob).toLowerCase()}`).join('; ');
+    scale.setAttribute('aria-label', `Risk scale: ${spoken}`);
+    announce(spoken);
+  }
+
+  // Screen readers hear one short summary once the inputs settle, not every slider step.
+  const summary = document.getElementById('predict-summary');
+  let announceTimer;
+  function announce(text) {
+    clearTimeout(announceTimer);
+    announceTimer = setTimeout(() => { if (summary) summary.textContent = text; }, 700);
   }
 
   function explain(p) {
