@@ -36,6 +36,7 @@ test('languages, canonical URLs and alternates point at each other', () => {
   for (const html of [en, el]) {
     assert.match(html, /hreflang="en" href="https:\/\/tsakioan\.com\/projects\/diabetes\/"/);
     assert.match(html, /hreflang="el" href="https:\/\/tsakioan\.com\/projects\/diabetes\/el\/"/);
+    assert.match(html, /hreflang="x-default" href="https:\/\/tsakioan\.com\/projects\/diabetes\/"/);
   }
   assert.equal(meta(en, 'og:url'), canonical(en));
   assert.equal(meta(el, 'og:url'), canonical(el));
