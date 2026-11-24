@@ -62,6 +62,18 @@ test('dashboard renders under a sub-path and the predictor responds', { skip: !c
     await page.fill('#in-bmi', '');
     assert.match(await rf.textContent(), /\d/, 'empty input still gives a number');
 
+    // Review fixes: honest copy, no smoking in the explanation, step-aligned inputs.
+    const findings = await page.textContent('#findings');
+    assert.match(findings, /more than half of the patients it flags are false alarms/);
+    assert.match(await page.textContent('#predict'), /compare how inputs change the estimate/);
+    await page.selectOption('#in-smoking', 'never');
+    assert.doesNotMatch(await page.textContent('.drivers'), /smok/i);
+    assert.match(await page.textContent('.drivers'), /^Logistic Regression/);
+    await page.fill('#in-age', '');
+    await page.focus('#in-age-range');
+    await page.keyboard.press('ArrowRight');
+    assert.match(await page.inputValue('#in-age'), /^\d+$/, 'age stays a whole number');
+
     assert.deepEqual(errors, []);
   } finally {
     await browser.close();

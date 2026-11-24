@@ -1,5 +1,5 @@
 // Live risk estimator: builds the form and updates both models on every input.
-import { predictLR, predictRF, vectorize, riskBand, clampInput } from './models.js';
+import { predictLR, predictRF, vectorize, riskBand, clampInput, explainLR, stepAlign } from './models.js';
 import { LABELS } from './charts.js';
 
 const SLIDERS = ['age', 'bmi', 'HbA1c_level', 'blood_glucose_level'];
@@ -19,15 +19,14 @@ function el(tag, attrs = {}, ...children) {
 
 function sliderRow(feat, r, onChange) {
   const id = `in-${feat}`;
-  const start = Math.round(r.mean / r.step) * r.step;
-  const startText = start.toFixed(r.step < 1 ? 1 : 0);
-  const range = el('input', { type: 'range', id: `${id}-range`, min: r.p01, max: r.p99, step: r.step, value: startText,
+  const { lo, hi, start } = stepAlign(r);
+  const range = el('input', { type: 'range', id: `${id}-range`, min: lo, max: hi, step: r.step, value: start,
     'aria-label': `${SHORT[feat]} slider` });
-  const number = el('input', { type: 'number', id, min: r.min, max: r.max, step: r.step, value: startText, inputmode: 'decimal' });
+  // No min on the number box: browsers step from min, and the data minimum isn't a round number.
+  const number = el('input', { type: 'number', id, step: r.step, value: start, inputmode: 'decimal' });
   range.addEventListener('input', () => { number.value = range.value; onChange(); });
   number.addEventListener('input', () => {
-    const v = clampInput(number.value, r);
-    range.value = v;
+    range.value = clampInput(number.value, r);
     onChange();
   });
   number.addEventListener('change', () => { number.value = clampInput(number.value, r); onChange(); });
@@ -133,18 +132,12 @@ export function setupPredictor(data) {
     drivers.textContent = explain(p);
   }
 
-  // Which inputs push the logistic-regression score up most, relative to an average patient.
   function explain(p) {
-    const m = data.model_lr;
-    const x = vectorize(m.features, p);
-    const contrib = m.features.map((f, i) => ({ f, c: m.coef[i] * ((x[i] - m.mean[i]) / m.scale[i]) }))
-      .filter((d) => d.c > 0.15)
-      .sort((a, b) => b.c - a.c)
-      .slice(0, 2)
-      .map((d) => SHORT[d.f] ?? LABELS[d.f] ?? d.f)
+    const names = explainLR(data.model_lr, vectorize(data.model_lr.features, p))
+      .map((f) => SHORT[f] ?? LABELS[f] ?? f)
       .map((name) => (['HbA1c', 'BMI'].includes(name) ? name : name.toLowerCase()));
-    if (!contrib.length) return 'Nothing here pushes the estimate above an average patient.';
-    return `Biggest push upward: ${contrib.join(' and ')}.`;
+    if (!names.length) return 'Logistic Regression: nothing here pushes the estimate above an average patient.';
+    return `Logistic Regression: the biggest push upward comes from ${names.join(' and ')}.`;
   }
 
   render();

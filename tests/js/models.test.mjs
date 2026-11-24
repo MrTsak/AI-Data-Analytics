@@ -51,3 +51,29 @@ test('vectorize encodes raw gender and smoking values', () => {
   }
   assert.equal(at('bmi'), 30);
 });
+
+import { explainLR, stepAlign } from '../../web/js/models.js';
+
+test('explainLR never names a smoking category', () => {
+  for (const s of ['never', 'former', 'current', 'not current', 'ever', 'No Info']) {
+    const x = vectorize(lr.features, { gender: 'Female', smoking_history: s, age: 42, hypertension: 0,
+      heart_disease: 0, bmi: 27.3, HbA1c_level: 5.5, blood_glucose_level: 138 });
+    const names = explainLR(lr, x);
+    assert.ok(names.every((f) => !f.startsWith('smoking_')), `${s}: ${names}`);
+  }
+});
+
+test('explainLR names HbA1c for a high reading', () => {
+  const x = vectorize(lr.features, { gender: 'Female', smoking_history: 'never', age: 42, hypertension: 0,
+    heart_disease: 0, bmi: 27.3, HbA1c_level: 8.5, blood_glucose_level: 138 });
+  assert.equal(explainLR(lr, x)[0], 'HbA1c_level');
+});
+
+test('stepAlign gives step-aligned slider bounds and start', () => {
+  const r = stepAlign({ min: 0.08, max: 80, p01: 1.08, p99: 80, mean: 41.8, step: 1 });
+  assert.deepEqual([r.lo, r.hi, r.start], [1, 80, 42]);
+  const b = stepAlign({ min: 10.01, max: 95.69, p01: 14.55, p99: 48.79, mean: 27.3, step: 0.1 });
+  assert.equal(b.lo, 14.5);
+  assert.equal(b.start, 27.3);
+  assert.ok(Math.abs(((b.start - b.lo) / 0.1) - Math.round((b.start - b.lo) / 0.1)) < 1e-9);
+});

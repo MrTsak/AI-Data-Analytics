@@ -9,6 +9,8 @@ import pandas as pd
 DEFAULT_PATH = Path(__file__).resolve().parents[1] / "data" / "sample.csv"
 
 NUMERIC = ["age", "hypertension", "heart_disease", "bmi", "HbA1c_level", "blood_glucose_level"]
+BINARY = ["hypertension", "heart_disease"]
+CONTINUOUS = [c for c in NUMERIC if c not in BINARY]
 
 # Raw smoking value -> one-hot column. "No Info" is the baseline (all zeros).
 SMOKING_LEVELS = {
@@ -58,9 +60,13 @@ def load_dataset(path: str | Path = DEFAULT_PATH) -> Dataset:
     other = df["gender"] == "Other"
     n_other = int(other.sum())
     df = df[~other].copy()
-    num = NUMERIC + ["diabetes"]
-    df[num] = df[num].fillna(df[num].mean())
-    df["smoking_history"] = df["smoking_history"].fillna("No Info")
+    # Rows without an outcome can't be used for training or evaluation.
+    df = df.dropna(subset=["diabetes"])
+    df["diabetes"] = df["diabetes"].astype(int)
+    for col in BINARY:
+        df[col] = df[col].fillna(df[col].mode().iloc[0]).astype(int)
+    df[CONTINUOUS] = df[CONTINUOUS].fillna(df[CONTINUOUS].mean())
+    df["smoking_history"] = df["smoking_history"].where(df["smoking_history"].isin(SMOKING_LABELS), "No Info")
     df = df.reset_index(drop=True)
     return Dataset(
         raw=df,

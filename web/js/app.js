@@ -101,13 +101,15 @@ function renderMetricsTable(models) {
 function renderFindings(d) {
   const s = d.summary;
   const m = d.models.metrics;
-  const top = Object.entries(d.models.importances).sort((a, b) => b[1] - a[1]).slice(0, 2).map(([f]) => LABELS[f]);
+  const plain = { HbA1c_level: 'HbA1c', blood_glucose_level: 'blood glucose', age: 'age', bmi: 'BMI' };
+  const top = Object.entries(d.models.importances).sort((a, b) => b[1] - a[1]).slice(0, 2)
+    .map(([f]) => plain[f] ?? LABELS[f].toLowerCase());
   const rates = d.clusters.diabetes_rate;
   const hi = rates.indexOf(Math.max(...rates));
   const other = MODEL_NAMES.find((n) => n !== s.best);
   const items = [
-    `${top[0]} and ${top[1].toLowerCase()} carry most of the predictive signal. Together they account for most of the Random Forest's feature importance.`,
-    `The ${s.best} edges out ${other} (AUC ${m[s.best].auc.toFixed(3)} vs ${m[other].auc.toFixed(3)}). Both catch about ${fmtPct(m[s.best].recall, 0)} of diabetic patients, at the cost of a fair number of false alarms (precision ${fmtPct(m[s.best].precision, 0)}).`,
+    `${top[0].charAt(0).toUpperCase()}${top[0].slice(1)} and ${top[1]} carry most of the predictive signal. Together they account for most of the Random Forest's feature importance.`,
+    `The ${s.best} edges out ${other} (AUC ${m[s.best].auc.toFixed(3)} vs ${m[other].auc.toFixed(3)}). Both catch about ${fmtPct(m[s.best].recall, 0)} of diabetic patients, but ${m[s.best].precision < 0.5 ? 'more than half of the patients it flags are false alarms' : `${fmtPct(1 - m[s.best].precision, 0)} of the patients it flags are false alarms`} (precision ${fmtPct(m[s.best].precision, 0)}). That trade-off suits screening, where a follow-up test settles it.`,
     `Group ${hi + 1} has a diabetes rate of ${fmtPct(rates[hi])}, against ${fmtPct(s.positive_rate)} overall. Clustering alone picks out a high-risk population.`,
     `${s.n_duplicates.toLocaleString()} duplicate records and ${s.n_other_gender} records with gender "Other" (too few to model) were removed before training, so test scores aren't inflated by repeated rows.`,
     'The dataset has no lifestyle, diet, family-history or genetic data, and the results have not been clinically validated.',
