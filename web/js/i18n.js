@@ -9,6 +9,8 @@ export const pick = (en, gr) => (isGreek ? gr : en);
 /** Static English text to Greek. Unknown text is returned unchanged. */
 const GREEK = {
   'Age (years)': 'Ηλικία (έτη)',
+  Age: 'Ηλικία',
+  'Blood glucose': 'Γλυκόζη αίματος',
   'Blood glucose (mg/dL)': 'Γλυκόζη αίματος (mg/dL)',
   'Heart disease': 'Καρδιοπάθεια',
   Hypertension: 'Υπέρταση',
