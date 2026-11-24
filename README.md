@@ -1,6 +1,6 @@
 # Diabetes Risk Explorer
 
-Explore 100,000 patient health records, compare two machine-learning models, and try a live diabetes-risk estimate in your browser.
+Explore 100,000 health records, compare two machine-learning models, and try a live diabetes-risk estimate in your browser.
 
 **Live demo:** [tsakioan.com/projects/diabetes](https://tsakioan.com/projects/diabetes/)
 
