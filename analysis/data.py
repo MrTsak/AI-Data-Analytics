@@ -57,7 +57,8 @@ def load_dataset(path: str | Path = DEFAULT_PATH) -> Dataset:
     n_original = len(df)
     n_duplicates = int(df.duplicated().sum())
     df = df.drop_duplicates()
-    other = df["gender"] == "Other"
+    # "Other" (18 rows in the bundled data), blank or unrecognised genders are too few to model.
+    other = ~df["gender"].isin(["Female", "Male"])
     n_other = int(other.sum())
     df = df[~other].copy()
     # Rows without an outcome can't be used for training or evaluation.
@@ -65,7 +66,8 @@ def load_dataset(path: str | Path = DEFAULT_PATH) -> Dataset:
     df["diabetes"] = df["diabetes"].astype(int)
     for col in BINARY:
         df[col] = df[col].fillna(df[col].mode().iloc[0]).astype(int)
-    df[CONTINUOUS] = df[CONTINUOUS].fillna(df[CONTINUOUS].mean())
+    # Gaps in continuous columns are left as NaN here and filled in train_models from the
+    # training rows only, so test rows never influence the fill values.
     df["smoking_history"] = df["smoking_history"].where(df["smoking_history"].isin(SMOKING_LABELS), "No Info")
     df = df.reset_index(drop=True)
     return Dataset(
