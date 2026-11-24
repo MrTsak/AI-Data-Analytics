@@ -116,6 +116,15 @@ test('Greek page renders the same charts in Greek', { skip: !chromium && 'playwr
     assert.match(await page.textContent('#findings'), /κατάλληλο για έλεγχο/);
     assert.equal(await page.textContent('.theme-toggle'), 'Σκούρο');
 
+    // The predictor responds in Greek too.
+    assert.match(await page.textContent('.readout[data-model="Random Forest"] .readout-band'), /εκτιμώμενη πιθανότητα/);
+    assert.match(await page.textContent('.drivers'), /^Λογιστική παλινδρόμηση:/);
+    const rf = page.locator('.readout[data-model="Random Forest"] .readout-value');
+    const before = await rf.textContent();
+    await page.fill('#in-HbA1c_level', '9');
+    assert.notEqual(await rf.textContent(), before, 'Greek RF probability changed');
+    assert.match(await rf.textContent(), /%/);
+
     assert.deepEqual(errors, []);
   } finally {
     await browser.close();

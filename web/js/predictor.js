@@ -1,11 +1,18 @@
 // Live risk estimator: builds the form and updates both models on every input.
 import { predictLR, predictRF, vectorize, riskBand, clampInput, explainLR, stepAlign } from './models.js';
 import { LABELS } from './charts.js';
+import { t, pick, num, modelName } from './i18n.js';
 
 const SLIDERS = ['age', 'bmi', 'HbA1c_level', 'blood_glucose_level'];
 const UNITS = { age: 'years', bmi: 'kg/m²', HbA1c_level: '%', blood_glucose_level: 'mg/dL' };
+const UNITS_EL = { age: 'έτη', bmi: 'kg/m²', HbA1c_level: '%', blood_glucose_level: 'mg/dL' };
 const SHORT = { age: 'Age', bmi: 'BMI', HbA1c_level: 'HbA1c', blood_glucose_level: 'Blood glucose' };
+const SHORT_EL = { age: 'Ηλικία', bmi: 'BMI', HbA1c_level: 'HbA1c', blood_glucose_level: 'Γλυκόζη αίματος' };
 const BAND_VAR = { Low: '--neg', Moderate: '--mid', High: '--pos' };
+
+// Names as shown on this page: English on the English page, Greek on the Greek page.
+const shortName = (feat) => pick(SHORT[feat], SHORT_EL[feat]);
+const unitsOf = (feat) => pick(UNITS[feat], UNITS_EL[feat]);
 
 function el(tag, attrs = {}, ...children) {
   const node = document.createElement(tag);
@@ -21,7 +28,7 @@ function sliderRow(feat, r, onChange) {
   const id = `in-${feat}`;
   const { lo, hi, start } = stepAlign(r);
   const range = el('input', { type: 'range', id: `${id}-range`, min: lo, max: hi, step: r.step, value: start,
-    'aria-label': `${SHORT[feat]} slider` });
+    'aria-label': pick(`${SHORT[feat]} slider`, `${SHORT_EL[feat]} ρυθμιστής`) });
   // No min on the number box: browsers step from min, and the data minimum isn't a round number.
   const number = el('input', { type: 'number', id, step: r.step, value: start, inputmode: 'decimal' });
   range.addEventListener('input', () => { number.value = range.value; onChange(); });
@@ -30,14 +37,14 @@ function sliderRow(feat, r, onChange) {
     onChange();
   });
   number.addEventListener('change', () => { number.value = clampInput(number.value, r); onChange(); });
-  const label = el('label', { for: id }, SHORT[feat], ' ', el('small', {}, UNITS[feat]));
+  const label = el('label', { for: id }, shortName(feat), ' ', el('small', {}, unitsOf(feat)));
   return { node: el('div', { class: 'row' }, el('div', { class: 'row-head' }, label, number), range), number, range };
 }
 
 function formatProb(p) {
   if (p >= 0.995) return '>99%';
   if (p < 0.001) return '<0.1%';
-  return `${(p * 100).toFixed(p < 0.1 ? 1 : 0)}%`;
+  return `${num(p * 100, p < 0.1 ? 1 : 0)}%`;
 }
 
 export function setupPredictor(data) {
@@ -48,14 +55,14 @@ export function setupPredictor(data) {
   const update = () => render();
 
   // Gender
-  const gender = el('div', { class: 'segmented', role: 'radiogroup', 'aria-label': 'Gender' },
+  const gender = el('div', { class: 'segmented', role: 'radiogroup', 'aria-label': t('Gender') },
     ...['Female', 'Male'].map((g, i) => {
       const radio = el('input', { type: 'radio', name: 'gender', value: g });
       if (i === 0) radio.checked = true;
       radio.addEventListener('change', update);
-      return el('label', {}, radio, el('span', {}, g));
+      return el('label', {}, radio, el('span', {}, t(g)));
     }));
-  form.append(el('div', { class: 'row' }, el('span', { class: 'row-head' }, 'Gender'), gender));
+  form.append(el('div', { class: 'row' }, el('span', { class: 'row-head' }, t('Gender')), gender));
 
   for (const feat of SLIDERS) {
     const row = sliderRow(feat, numeric[feat], update);
@@ -68,13 +75,13 @@ export function setupPredictor(data) {
     const box = el('input', { type: 'checkbox', id: `in-${feat}` });
     box.addEventListener('change', update);
     inputs[feat] = box;
-    checks.append(el('label', { for: `in-${feat}` }, box, LABELS[feat]));
+    checks.append(el('label', { for: `in-${feat}` }, box, t(LABELS[feat])));
   }
   form.append(checks);
 
-  const select = el('select', { id: 'in-smoking' }, ...smoking.map((s) => new Option(s.label, s.value)));
+  const select = el('select', { id: 'in-smoking' }, ...smoking.map((s) => new Option(t(s.label), s.value)));
   select.addEventListener('change', update);
-  form.append(el('label', { class: 'field', for: 'in-smoking' }, el('span', {}, 'Smoking history'), select));
+  form.append(el('label', { class: 'field', for: 'in-smoking' }, el('span', {}, t('Smoking history')), select));
   form.addEventListener('submit', (e) => e.preventDefault());
 
   // Result area
@@ -86,7 +93,7 @@ export function setupPredictor(data) {
     const value = el('p', { class: 'readout-value' }, '–');
     const band = el('p', { class: 'readout-band' }, '');
     const card = el('div', { class: 'readout', 'data-model': name },
-      el('p', { class: 'readout-name' }, name), value, band);
+      el('p', { class: 'readout-name' }, modelName(name)), value, band);
     readouts[name] = { card, value, band };
     readoutWrap.append(card);
   }
@@ -98,9 +105,9 @@ export function setupPredictor(data) {
     el('span', { style: 'width:40%;background:var(--neg);opacity:.35' }),
     el('span', { style: 'width:30%;background:var(--mid);opacity:.45' }),
     el('span', { style: 'width:30%;background:var(--pos);opacity:.45' }));
-  const scale = el('div', { class: 'scale', role: 'img', 'aria-label': 'Risk scale' },
+  const scale = el('div', { class: 'scale', role: 'img', 'aria-label': t('Risk scale') },
     markers['Random Forest'], track, markers['Logistic Regression'],
-    el('div', { class: 'scale-labels' }, el('span', {}, 'Low'), el('span', {}, 'Moderate'), el('span', {}, 'High')));
+    el('div', { class: 'scale-labels' }, el('span', {}, t('Low')), el('span', {}, t('Moderate')), el('span', {}, t('High'))));
   const drivers = el('p', { class: 'drivers' });
   result.append(readoutWrap, scale, drivers);
 
@@ -127,12 +134,14 @@ export function setupPredictor(data) {
       const r = readouts[name];
       r.card.style.setProperty('--band', `var(${BAND_VAR[band]})`);
       r.value.textContent = formatProb(prob);
-      r.band.textContent = `${band} estimated probability`;
+      r.band.textContent = pick(`${band} estimated probability`, `${t(band)} εκτιμώμενη πιθανότητα`);
       markers[name].style.left = `${Math.min(98, Math.max(2, prob * 100))}%`;
     }
     drivers.textContent = explain(p);
-    const spoken = Object.entries(probs).map(([name, prob]) => `${name} ${formatProb(prob)}, ${riskBand(prob, prior).toLowerCase()}`).join('; ');
-    scale.setAttribute('aria-label', `Risk scale: ${spoken}`);
+    const spoken = Object.entries(probs)
+      .map(([name, prob]) => `${modelName(name)} ${formatProb(prob)}, ${pick(riskBand(prob, prior).toLowerCase(), t(riskBand(prob, prior)).toLowerCase())}`)
+      .join('; ');
+    scale.setAttribute('aria-label', `${t('Risk scale')}: ${spoken}`);
     announce(spoken);
   }
 
@@ -146,10 +155,19 @@ export function setupPredictor(data) {
 
   function explain(p) {
     const names = explainLR(data.model_lr, vectorize(data.model_lr.features, p))
-      .map((f) => SHORT[f] ?? LABELS[f] ?? f)
+      .map((f) => shortName(f) ?? t(LABELS[f] ?? f))
       .map((name) => (['HbA1c', 'BMI'].includes(name) ? name : name.toLowerCase()));
-    if (!names.length) return 'Logistic Regression: nothing here pushes the estimate above an average patient.';
-    return `Logistic Regression: the biggest push upward comes from ${names.join(' and ')}.`;
+    const model = modelName('Logistic Regression');
+    if (!names.length) {
+      return pick(
+        `${model}: nothing here pushes the estimate above an average patient.`,
+        `${model}: τίποτα εδώ δεν ωθεί την εκτίμηση πάνω από έναν μέσο ασθενή.`,
+      );
+    }
+    return pick(
+      `${model}: the biggest push upward comes from ${names.join(' and ')}.`,
+      `${model}: η μεγαλύτερη ώθηση προς τα πάνω προέρχεται από ${names.join(' και ')}.`,
+    );
   }
 
   render();
