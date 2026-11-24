@@ -406,22 +406,29 @@ class DiabetesPredictorApp:
                                     text_color=color)
         self.probability_label.configure(text=f"Probability: {probability * 100:.1f}%", text_color=color)
 
-    def show_conclusions(self):
-        main = ctk.CTkScrollableFrame(self.content_frame)
-        main.pack(fill="both", expand=True, padx=20, pady=20)
+    def conclusion_findings(self) -> list:
         m = self.results.metrics
         rf = self.results.rf
         top = sorted(zip(rf.feature_names_in_, rf.feature_importances_), key=lambda t: -t[1])[:2]
         top_names = " and ".join(LABELS.get(n, n) for n, _ in top)
-        card = self._card(main, "KEY FINDINGS")
-        findings = [
+        rates = self.clusters.diabetes_rate
+        hi = rates.index(max(rates))
+        c = self.clusters.centers.iloc[hi]
+        overall = self.df["diabetes"].mean()
+        return [
             f"1. {self.best} performed best with ROC-AUC {m[self.best]['auc']:.3f} "
             f"(recall {m[self.best]['recall'] * 100:.1f}%)",
             f"2. {top_names} are the strongest predictors (Random Forest feature importance)",
-            "3. Cluster analysis separates a high-HbA1c, older group with a much higher diabetes rate",
+            f"3. Clustering finds a group (Cluster {hi}: avg age {c['age']:.0f}, HbA1c {c['HbA1c_level']:.1f}%) "
+            f"with a diabetes rate of {rates[hi] * 100:.1f}%, against {overall * 100:.1f}% overall",
             "4. The model could be improved with lifestyle, family-history and genetic data",
         ]
-        for f in findings:
+
+    def show_conclusions(self):
+        main = ctk.CTkScrollableFrame(self.content_frame)
+        main.pack(fill="both", expand=True, padx=20, pady=20)
+        card = self._card(main, "KEY FINDINGS")
+        for f in self.conclusion_findings():
             ctk.CTkLabel(card, text=f, font=("Arial", 12), anchor="w").pack(fill="x", padx=20, pady=5)
         card = self._card(main, "LIMITATIONS")
         for f in [f"• {self.ds.n_duplicates:,} duplicate records were removed before training",

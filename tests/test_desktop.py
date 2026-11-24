@@ -46,3 +46,11 @@ def test_all_tabs_render(app):
     for tab in app.tabs:
         _show(app, tab)
         assert app.content_frame is not None and app.content_frame.winfo_exists()
+
+
+def test_conclusions_generated_from_clusters(app):
+    rates = app.clusters.diabetes_rate
+    hi = rates.index(max(rates))
+    text = " ".join(app.conclusion_findings())
+    assert f"{rates[hi] * 100:.1f}%" in text
+    assert f"{app.clusters.centers.iloc[hi]['age']:.0f}" in text

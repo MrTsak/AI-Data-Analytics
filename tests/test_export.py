@@ -49,3 +49,22 @@ def test_rf_json_matches_sklearn(out):
     expected = ctx.rf.predict_proba(X)[:, 1]
     got = np.array([rf_predict_from_json(model, row) for row in X.to_numpy()])
     assert np.allclose(got, expected, atol=1e-6)
+
+
+def test_export_handles_messy_replacement_dataset(tmp_path):
+    import pandas as pd
+    from tests.conftest import DATA
+
+    df = pd.read_csv(DATA).iloc[:3000].copy()
+    df.loc[df.index[:20], "gender"] = None
+    df.loc[df.index[20:30], "smoking_history"] = "sometimes"
+    df.loc[df.index[30:40], "hypertension"] = None
+    df.loc[df.index[40:50], "bmi"] = None
+    csv = tmp_path / "messy.csv"
+    df.to_csv(csv, index=False)
+    out = tmp_path / "out"
+    main(out, data_path=csv)
+    ex = _load(out, "explore.json")
+    assert ex["categories"]["gender"]["labels"] == ["Female", "Male"]
+    assert ex["categories"]["hypertension"]["labels"] == ["No", "Yes"]
+    assert "sometimes" not in json.dumps(ex)

@@ -27,3 +27,10 @@ def test_descriptions_match_data(raw):
     ranked = np.argsort(c.diabetes_rate)
     assert c.descriptions[ranked[-1]].startswith("Highest risk")
     assert c.descriptions[ranked[0]].startswith("Lowest risk")
+
+
+def test_clustering_tolerates_missing_values(raw):
+    messy = raw.copy()
+    messy.loc[messy.index[::100], "bmi"] = np.nan
+    c = cluster_patients(messy)
+    assert sum(c.sizes) == len(messy)

@@ -74,6 +74,17 @@ test('dashboard renders under a sub-path and the predictor responds', { skip: !c
     await page.keyboard.press('ArrowRight');
     assert.match(await page.inputValue('#in-age'), /^\d+$/, 'age stays a whole number');
 
+    // Screen readers: a short delayed summary, not the whole result on every step.
+    assert.equal(await page.getAttribute('#predict-result', 'aria-live'), null);
+    await page.waitForFunction(() => /Random Forest [<>]?\d/.test(document.querySelector('#predict-summary')?.textContent || ''));
+    assert.match(await page.getAttribute('.scale', 'aria-label'), /Random Forest .*%.*Logistic Regression .*%/);
+
+    // Phones keep the section links.
+    await page.setViewportSize({ width: 390, height: 844 });
+    const nav = await page.locator('.topbar nav a').first().boundingBox();
+    assert.ok(nav && nav.width > 0, 'nav visible on phones');
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth), 390);
+
     assert.deepEqual(errors, []);
   } finally {
     await browser.close();

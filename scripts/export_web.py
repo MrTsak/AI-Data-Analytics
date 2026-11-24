@@ -159,10 +159,10 @@ def export_parity(ds: Dataset, res: ModelResults) -> list:
             for row, a, b in zip(X.to_numpy().tolist(), lr_p, rf_p)]
 
 
-def main(out_dir: str | Path = ROOT / "web" / "data") -> ModelResults:
+def main(out_dir: str | Path = ROOT / "web" / "data", data_path: str | Path | None = None) -> ModelResults:
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
-    ds = load_dataset()
+    ds = load_dataset(data_path) if data_path else load_dataset()
     res = train_models(ds)
     payloads = {
         "summary.json": export_summary(ds, res),

@@ -30,3 +30,13 @@ def test_roc_downsampled(results):
         assert len(roc["fpr"]) == len(roc["tpr"]) <= 101
         assert roc["fpr"][0] == 0 and roc["tpr"][0] == 0
         assert roc["fpr"][-1] == 1 and roc["tpr"][-1] == 1
+
+
+def test_missing_values_filled_from_training_rows_only():
+    import numpy as np
+
+    ds = load_dataset(DATA)
+    ds.X.loc[ds.X.index[::50], "bmi"] = np.nan
+    res = train_models(ds)
+    assert not res.X_test.isna().any().any()
+    assert np.isclose(res.fill_values["bmi"], res.X_train_raw["bmi"].mean())

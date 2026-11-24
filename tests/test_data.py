@@ -38,7 +38,7 @@ def test_encode_patient_matches_X():
         )
 
 
-def test_load_handles_missing_values(tmp_path):
+def test_load_keeps_continuous_gaps_for_split_time_filling(tmp_path):
     csv = tmp_path / "d.csv"
     csv.write_text(
         "gender,age,hypertension,heart_disease,smoking_history,bmi,HbA1c_level,blood_glucose_level,diabetes\n"
@@ -46,8 +46,21 @@ def test_load_handles_missing_values(tmp_path):
         "Male,30,1,0,current,25.0,5.0,100,0\n"
     )
     ds = load_dataset(csv)
-    assert not ds.X.isna().any().any()
-    assert ds.X["bmi"].iloc[0] == 25.0
+    # Continuous gaps are filled later from training rows only (see train_models).
+    assert ds.X["bmi"].isna().sum() == 1
+    assert ds.X.drop(columns=["bmi"]).notna().all().all()
+
+
+def test_excludes_missing_or_unknown_gender(tmp_path):
+    csv = tmp_path / "d.csv"
+    csv.write_text(
+        "gender,age,hypertension,heart_disease,smoking_history,bmi,HbA1c_level,blood_glucose_level,diabetes\n"
+        ",50,0,0,never,30,6.0,140,1\n"
+        "Unknown,30,1,0,current,25.0,5.0,100,0\n"
+        "Male,60,1,0,former,28.0,6.5,180,1\n"
+    )
+    ds = load_dataset(csv)
+    assert len(ds.raw) == 1 and ds.n_other_gender == 2
 
 
 def test_missing_target_dropped_and_binary_stays_binary(tmp_path):

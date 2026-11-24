@@ -77,3 +77,9 @@ test('stepAlign gives step-aligned slider bounds and start', () => {
   assert.equal(b.start, 27.3);
   assert.ok(Math.abs(((b.start - b.lo) / 0.1) - Math.round((b.start - b.lo) / 0.1)) < 1e-9);
 });
+
+test('clampInput treats overflowing numbers as out of range', () => {
+  const r = { min: 10, max: 95, mean: 27.3 };
+  assert.equal(clampInput('1e400', r), 95);
+  assert.equal(clampInput('-1e400', r), 10);
+});
