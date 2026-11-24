@@ -46,9 +46,14 @@ export function describe(node, label) {
 
 const base = (c, width) => ({
   width,
-  style: { background: 'transparent', color: c.ink, fontFamily: 'inherit', fontSize: '13px' },
+  // Plot paints its tooltips with --plot-background; set it so tooltips follow the light/dark theme.
+  style: `background: transparent; color: ${c.ink}; font-family: inherit; font-size: 13px; --plot-background: ${c.surface};`,
   marginLeft: 48,
+  marginBottom: 46,
 });
+
+// Axis titles centred below the tick labels, so they never sit on top of the last tick.
+const xAxis = (label, extra = {}) => ({ label, labelAnchor: 'center', labelOffset: 38, ...extra });
 
 /** Overlaid histograms as % of each group. */
 export function histogram(h, feat, width) {
@@ -62,7 +67,7 @@ export function histogram(h, feat, width) {
   });
   return Plot.plot({
     ...base(c, width), height: Math.min(380, width * 0.62),
-    x: { label: featureLabel(feat, LABELS) },
+    x: xAxis(featureLabel(feat, LABELS)),
     y: { label: t('% of group'), grid: true },
     color: { domain: ['No diabetes', 'Diabetes'], range: [c.neg, c.pos] },
     marks: [
@@ -83,12 +88,12 @@ export function categoryRates(cat, key, width) {
   });
   return Plot.plot({
     ...base(c, width), height: 60 + rows.length * 38, marginLeft: 170,
-    x: { label: t('Diabetes rate (%)'), grid: true },
+    x: xAxis(t('Diabetes rate (%)'), { grid: true }),
     y: { label: null, domain: rows.map((r) => r.label) },
     marks: [
       Plot.barX(rows, { y: 'label', x: 'rate', fill: c.pos, fillOpacity: 0.8,
         tip: true,
-        title: (d) => `${d.label}: ${num(d.rate, 1)}% ${pick('of', 'από')} ${num(d.total)} ${pick('patients', 'ασθενείς')}` }),
+        title: (d) => `${d.label}\n${num(d.rate, 1)}% ${pick('of', 'από')} ${num(d.total)} ${pick('patients', 'ασθενείς')}` }),
       Plot.text(rows, { y: 'label', x: 'rate', text: (d) => `${num(d.rate, 1)}%`, dx: 6, textAnchor: 'start', fill: c.ink }),
       Plot.ruleX([0], { stroke: c.soft }),
     ],
@@ -106,6 +111,10 @@ export function correlationHeatmap(corr, width) {
   }
   const names = corr.labels.map((l) => featureLabel(l, LABELS));
   const size = Math.min(width, 620);
+  // On narrow screens the cells shrink, so drop the leading zero (".26") and use smaller text.
+  const cell = (size - 150 - 20) / n;
+  const fontSize = cell < 44 ? 10 : 11;
+  const short = (r) => (r === 1 ? '1' : num(r, 2).replace(/^(-?)0(?=[.,])/, '$1'));
   return Plot.plot({
     ...base(c, size), height: size * 0.9, marginLeft: 150, marginBottom: 110,
     x: { domain: names, label: null, tickRotate: -35 },
@@ -113,9 +122,10 @@ export function correlationHeatmap(corr, width) {
     color: { type: 'diverging', scheme: 'RdBu', domain: [-1, 1], reverse: true },
     marks: [
       Plot.cell(rows, { x: 'a', y: 'b', fill: 'r', inset: 1, tip: true,
-        title: (d) => `${d.a} × ${d.b}: r = ${num(d.r, 2)}` }),
-      Plot.text(rows, { x: 'a', y: 'b', text: (d) => num(d.r, 2),
-        fill: (d) => (Math.abs(d.r) > 0.5 ? 'white' : 'black'), fontSize: 11 }),
+        // Three short lines, so the tooltip fits on a phone screen.
+        title: (d) => `${d.a}\n× ${d.b}\nr = ${num(d.r, 2)}` }),
+      Plot.text(rows, { x: 'a', y: 'b', text: (d) => short(d.r),
+        fill: (d) => (Math.abs(d.r) > 0.5 ? 'white' : 'black'), fontSize }),
     ],
   });
 }
@@ -126,7 +136,7 @@ export function clusterScatter(grid, width) {
   const c = palette();
   return Plot.plot({
     ...base(c, width), height: Math.min(440, width * 0.7),
-    x: { label: 'HbA1c (%)', grid: true },
+    x: xAxis('HbA1c (%)', { grid: true }),
     y: { label: 'BMI', grid: true },
     r: { range: [2, 12] },
     color: { domain: [0, 1, 2], range: c.clusters },
@@ -144,7 +154,7 @@ export function rocChart(metrics, names, width) {
     metrics[name].roc.fpr.map((fpr, i) => ({ name: modelName(name), fpr, tpr: metrics[name].roc.tpr[i] })));
   return Plot.plot({
     ...base(c, width), height: Math.min(380, width * 0.7),
-    x: { label: t('False positive rate'), domain: [0, 1] },
+    x: xAxis(t('False positive rate'), { domain: [0, 1] }),
     y: { label: t('True positive rate (recall)'), domain: [0, 1], grid: true },
     color: { domain: shown, range: colors, legend: true },
     marks: [
@@ -161,10 +171,10 @@ export function confusion(cm, title, width) {
   cm.forEach((row, i) => row.forEach((v, j) =>
     rows.push({ actual: labels[i], predicted: labels[j], v, correct: i === j })));
   return Plot.plot({
-    ...base(c, width), height: 230, marginLeft: 100, marginTop: 34,
+    ...base(c, width), height: 260, marginLeft: 132, marginTop: 64, marginBottom: 8,
     title: modelName(title),
-    x: { domain: labels, label: t('Predicted'), axis: 'top' },
-    y: { domain: labels, label: t('Actual') },
+    x: { domain: labels, label: t('Predicted'), axis: 'top', labelAnchor: 'center', labelOffset: 46 },
+    y: { domain: labels, label: t('Actual'), labelAnchor: 'center', labelOffset: 122 },
     marks: [
       Plot.cell(rows, { x: 'predicted', y: 'actual', fill: (d) => (d.correct ? c.neg : c.pos),
         fillOpacity: (d) => (d.correct ? 0.22 : 0.18), inset: 2 }),
@@ -183,7 +193,7 @@ export function importanceBars(importances, width) {
   return Plot.plot({
     ...base(c, width), height: 60 + rows.length * 30, marginLeft: 170,
     title: t('What the Random Forest relies on'),
-    x: { label: t('Feature importance'), grid: true },
+    x: xAxis(t('Feature importance'), { grid: true }),
     y: { label: null, domain: rows.map((r) => r.f) },
     marks: [
       Plot.barX(rows, { y: 'f', x: 'v', fill: c.ink, fillOpacity: 0.75 }),
