@@ -110,16 +110,16 @@ test('Greek page renders the same charts in Greek', { skip: !chromium && 'playwr
     for (const id of ['explore-chart', 'corr-chart', 'cluster-chart', 'roc-chart', 'confusion-charts', 'importance-chart']) {
       assert.ok(await page.$(`#${id} svg`), `#${id} has a chart`);
     }
-    assert.match(await page.textContent('h1'), /96\.128/, 'record count uses Greek separators');
-    assert.match(await page.textContent('#cluster-list li strong'), /^Ομάδα 1: /);
-    assert.match(await page.textContent('#cluster-list li span'), /ασθενείς\. Μέση ηλικία 49, BMI 28,9/);
-    assert.match(await page.textContent('#metrics-table'), /Τυχαίο δάσος/);
-    assert.match(await page.textContent('#findings'), /Το μοντέλο «/);
-    assert.match(await page.textContent('#findings'), /κατάλληλο για έλεγχο/);
-    assert.equal(await page.textContent('.theme-toggle'), 'Σκούρο');
+    assert.match(await page.textContent('[data-bind="hero-lede"]'), /96\.128 εγγραφές/, 'record count uses Greek separators');
+    assert.match(await page.textContent('#cluster-list li strong'), /^Ομάδα 1 — /);
+    assert.match(await page.textContent('#cluster-list li span'), /εγγραφές · Μέση ηλικία: 49 έτη · Μέσο BMI: 28,9/);
+    assert.match(await page.textContent('#metrics-table'), /Δείκτης αξιολόγησης/);
+    assert.match(await page.textContent('#findings'), /Το Random Forest πέτυχε/);
+    assert.match(await page.textContent('#findings'), /ιατρικό προσυμπτωματικό έλεγχο/);
+    assert.equal(await page.textContent('.theme-toggle'), 'Σκούρο θέμα');
 
     // The predictor responds in Greek too.
-    assert.match(await page.textContent('.readout[data-model="Random Forest"] .readout-band'), /εκτιμώμενη πιθανότητα/);
+    assert.match(await page.textContent('.readout[data-model="Random Forest"] .readout-band'), /εκτίμηση του μοντέλου/);
     assert.match(await page.textContent('.drivers'), /^Λογιστική παλινδρόμηση:/);
     const rf = page.locator('.readout[data-model="Random Forest"] .readout-value');
     const before = await rf.textContent();

@@ -93,7 +93,7 @@ export function categoryRates(cat, key, width) {
     marks: [
       Plot.barX(rows, { y: 'label', x: 'rate', fill: c.pos, fillOpacity: 0.8,
         tip: true,
-        title: (d) => `${d.label}\n${num(d.rate, 1)}% ${pick('of', 'από')} ${num(d.total)} ${pick('patients', 'ασθενείς')}` }),
+        title: (d) => `${d.label}\n${num(d.rate, 1)}% ${pick('of', 'από')} ${num(d.total)} ${pick('patients', 'εγγραφές')}` }),
       Plot.text(rows, { y: 'label', x: 'rate', text: (d) => `${num(d.rate, 1)}%`, dx: 6, textAnchor: 'start', fill: c.ink }),
       Plot.ruleX([0], { stroke: c.soft }),
     ],

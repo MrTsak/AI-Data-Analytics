@@ -134,7 +134,7 @@ export function setupPredictor(data) {
       const r = readouts[name];
       r.card.style.setProperty('--band', `var(${BAND_VAR[band]})`);
       r.value.textContent = formatProb(prob);
-      r.band.textContent = pick(`${band} estimated probability`, `${t(band)} εκτιμώμενη πιθανότητα`);
+      r.band.textContent = pick(`${band} estimated probability`, `${t(band)} εκτίμηση του μοντέλου`);
       markers[name].style.left = `${Math.min(98, Math.max(2, prob * 100))}%`;
     }
     drivers.textContent = explain(p);
@@ -160,13 +160,13 @@ export function setupPredictor(data) {
     const model = modelName('Logistic Regression');
     if (!names.length) {
       return pick(
-        `${model}: nothing here pushes the estimate above an average patient.`,
-        `${model}: τίποτα εδώ δεν ωθεί την εκτίμηση πάνω από έναν μέσο ασθενή.`,
+        `${model}: no value raises the estimate noticeably above the training-set averages.`,
+        `${model}: δεν εντοπίζεται θετική συμβολή των επιμέρους τιμών σε σχέση με τις τιμές αναφοράς του μοντέλου (τους μέσους όρους του συνόλου εκπαίδευσης).`,
       );
     }
     return pick(
-      `${model}: the biggest push upward comes from ${names.join(' and ')}.`,
-      `${model}: η μεγαλύτερη ώθηση προς τα πάνω προέρχεται από ${names.join(' και ')}.`,
+      `${model}: compared with the training-set averages, the biggest push upward comes from ${names.join(' and ')}.`,
+      `${model}: οι μεταβλητές που συμβάλλουν περισσότερο στην αύξηση της εκτίμησης, σε σχέση με τους μέσους όρους του συνόλου εκπαίδευσης, είναι: ${names.join(' και ')}.`,
     );
   }
 
