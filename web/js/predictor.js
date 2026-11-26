@@ -1,4 +1,4 @@
-// Live risk estimator: builds the form and updates both models on every input.
+// Model predictions: builds the form and updates both models' estimates on every input.
 import { predictLR, predictRF, vectorize, riskBand, clampInput, explainLR, stepAlign } from './models.js';
 import { LABELS } from './charts.js';
 import { t, pick, num, modelName } from './i18n.js';
@@ -105,7 +105,7 @@ export function setupPredictor(data) {
     el('span', { style: 'width:40%;background:var(--neg);opacity:.35' }),
     el('span', { style: 'width:30%;background:var(--mid);opacity:.45' }),
     el('span', { style: 'width:30%;background:var(--pos);opacity:.45' }));
-  const scale = el('div', { class: 'scale', role: 'img', 'aria-label': t('Risk scale') },
+  const scale = el('div', { class: 'scale', role: 'img', 'aria-label': t('Model estimate scale') },
     markers['Random Forest'], track, markers['Logistic Regression'],
     el('div', { class: 'scale-labels' }, el('span', {}, t('Low')), el('span', {}, t('Moderate')), el('span', {}, t('High'))));
   const drivers = el('p', { class: 'drivers' });
@@ -134,14 +134,14 @@ export function setupPredictor(data) {
       const r = readouts[name];
       r.card.style.setProperty('--band', `var(${BAND_VAR[band]})`);
       r.value.textContent = formatProb(prob);
-      r.band.textContent = pick(`${band} estimated probability`, `${t(band)} εκτίμηση του μοντέλου`);
+      r.band.textContent = pick(`${band} model estimate`, `${t(band)} εκτίμηση του μοντέλου`);
       markers[name].style.left = `${Math.min(98, Math.max(2, prob * 100))}%`;
     }
     drivers.textContent = explain(p);
     const spoken = Object.entries(probs)
       .map(([name, prob]) => `${modelName(name)} ${formatProb(prob)}, ${pick(riskBand(prob, prior).toLowerCase(), t(riskBand(prob, prior)).toLowerCase())}`)
       .join('; ');
-    scale.setAttribute('aria-label', `${t('Risk scale')}: ${spoken}`);
+    scale.setAttribute('aria-label', `${t('Model estimate scale')}: ${spoken}`);
     announce(spoken);
   }
 

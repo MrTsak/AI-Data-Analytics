@@ -105,12 +105,12 @@ export function categoryRates(cat, key, width) {
   });
   return Plot.plot({
     ...base(c, width), height: 60 + rows.length * 38, marginLeft: 170,
-    x: xAxis(t('Diabetes rate (%)'), { grid: true }),
+    x: xAxis(t('Records with diabetes (%)'), { grid: true }),
     y: { label: null, domain: rows.map((r) => r.label) },
     marks: [
       Plot.barX(rows, { y: 'label', x: 'rate', fill: c.pos, fillOpacity: 0.8,
         tip: true,
-        title: (d) => `${d.label}\n${num(d.rate, 1)}% ${pick('of', 'από')} ${num(d.total)} ${pick('patients', 'εγγραφές')}` }),
+        title: (d) => `${d.label}\n${num(d.rate, 1)}% ${pick('of', 'από')} ${num(d.total)} ${pick('records', 'εγγραφές')}` }),
       Plot.text(rows, { y: 'label', x: 'rate', text: (d) => `${num(d.rate, 1)}%`, dx: 6, textAnchor: 'start', fill: c.ink }),
       Plot.ruleX([0], { stroke: c.soft }),
     ],
@@ -158,8 +158,8 @@ export function correlationHeatmap(corr, width) {
 
 export const CLUSTER_SYMBOLS = ['circle', 'square', 'triangle'];
 
-// Each dot is a group of patients who share an HbA1c band, a BMI band and a cluster.
-// Its size shows how many patients it holds. Groups under 5 people are not published.
+// Each dot is a set of records that share an HbA1c band, a BMI band and a cluster.
+// Its size shows how many records it holds. Sets under 5 records are not published.
 export function clusterScatter(grid, width) {
   const c = palette();
   return Plot.plot({
@@ -205,8 +205,8 @@ export function confusion(cm, title, width) {
   return Plot.plot({
     ...base(c, width), height: 260, marginLeft: 132, marginTop: 64, marginBottom: 8,
     title: modelName(title),
-    x: { domain: labels, label: t('Predicted'), axis: 'top', labelAnchor: 'center', labelOffset: 46 },
-    y: { domain: labels, label: t('Actual'), labelAnchor: 'center', labelOffset: 122 },
+    x: { domain: labels, label: t('Model prediction'), axis: 'top', labelAnchor: 'center', labelOffset: 46 },
+    y: { domain: labels, label: t('Actual class'), labelAnchor: 'center', labelOffset: 122 },
     marks: [
       Plot.cell(rows, { x: 'predicted', y: 'actual', fill: (d) => (d.correct ? c.neg : c.pos),
         fillOpacity: (d) => (d.correct ? 0.22 : 0.18), inset: 2 }),
@@ -224,7 +224,7 @@ export function importanceBars(importances, width) {
     .slice(0, 8);
   return Plot.plot({
     ...base(c, width), height: 60 + rows.length * 30, marginLeft: 170,
-    title: t('What the Random Forest relies on'),
+    title: t('Which variables the Random Forest uses most'),
     x: xAxis(t('Feature importance'), { grid: true }),
     y: { label: null, domain: rows.map((r) => r.f) },
     marks: [

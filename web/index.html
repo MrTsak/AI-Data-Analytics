@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Diabetes Risk Explorer</title>
-  <meta name="description" content="Explore 100,000 records, compare two machine-learning models and try a live diabetes-risk estimate. An educational data-analytics project.">
+  <title>Diabetes Data Analysis</title>
+  <meta name="description" content="An educational machine-learning project with an initial set of 100,000 records: explore the data, compare two models and see how their estimates change.">
   <link rel="canonical" href="https://tsakioan.com/projects/diabetes/">
   <link rel="alternate" hreflang="en" href="https://tsakioan.com/projects/diabetes/">
   <link rel="alternate" hreflang="el" href="https://tsakioan.com/projects/diabetes/el/">
@@ -12,13 +12,13 @@
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Tsakioan">
-  <meta property="og:title" content="Diabetes Risk Explorer">
-  <meta property="og:description" content="Explore 100,000 records, compare two machine-learning models and try a live diabetes-risk estimate. An educational data-analytics project.">
+  <meta property="og:title" content="Diabetes Data Analysis">
+  <meta property="og:description" content="An educational machine-learning project with an initial set of 100,000 records: explore the data, compare two models and see how their estimates change.">
   <meta property="og:url" content="https://tsakioan.com/projects/diabetes/">
-  <meta property="og:image" content="https://tsakioan.com/projects/diabetes/og-image.png?v=3">
+  <meta property="og:image" content="https://tsakioan.com/projects/diabetes/og-image.png?v=4">
   <meta property="og:image:width" content="2400">
   <meta property="og:image:height" content="1260">
-  <meta property="og:image:alt" content="What predicts diabetes in 96,128 records? Two machine-learning models, three patient groups and a live risk estimate.">
+  <meta property="og:image:alt" content="What does the data show about diabetes? Two machine-learning models, three groups of records and an interactive test of the models.">
   <meta property="og:locale" content="en_US">
   <meta property="og:locale:alternate" content="el_GR">
   <meta name="twitter:card" content="summary_large_image">
@@ -35,12 +35,12 @@
   <a class="skip" href="#main">Skip to content</a>
   <header class="topbar">
     <a class="home-link" href="https://tsakioan.com/"><span aria-hidden="true">←</span> <span class="sr-only">Back to </span>Portfolio</a>
-    <a class="brand" href="#top">Diabetes Risk Explorer</a>
+    <a class="brand" href="#top">Diabetes Data Analysis</a>
     <nav aria-label="Sections">
-      <a href="#explore">Explore</a>
-      <a href="#clusters">Clusters</a>
+      <a href="#explore">Data</a>
+      <a href="#clusters">Record groups</a>
       <a href="#models">Models</a>
-      <a href="#predict">Try it</a>
+      <a href="#predict">Model predictions</a>
       <a href="el/" hreflang="el" lang="el">Ελληνικά</a>
     </nav>
     <button class="theme-toggle" type="button" aria-label="Dark theme">Dark</button>
@@ -48,21 +48,21 @@
 
   <main id="main">
     <section class="hero" id="top">
-      <h1>What predicts diabetes in <span data-bind="n_rows">96,128</span> records?</h1>
-      <p class="lede" data-bind="hero-lede">100,000 records went in. After removing 3,854 exact duplicates, two models were trained to spot diabetes. The Random Forest finds 68% of diabetic patients it has never seen, with an ROC-AUC of 0.963.</p>
+      <h1>What does the data show about diabetes?</h1>
+      <p class="lede" data-bind="hero-lede">This educational project starts from an initial set of 100,000 records. After removing 3,854 duplicate records and 18 records with “Other” in the gender field, 96,128 records were used. Two machine-learning models were trained and compared. On the test set, the Random Forest reached an ROC-AUC of 0.963 and identified 68% of the records with diabetes.</p>
       <p class="hero-actions">
-        <a class="button" href="#predict">Try the risk estimator</a>
+        <a class="button" href="#predict">Explore model predictions</a>
         <a class="link" href="https://github.com/MrTsak/AI-Data-Analytics">Read the code on GitHub</a>
       </p>
-      <p class="disclaimer">Educational project — not a medical device or diagnosis.</p>
+      <p class="disclaimer">Educational machine-learning project. Not intended for medical use or diagnosis.</p>
     </section>
 
     <section class="block" id="explore" aria-labelledby="explore-h">
       <div class="block-text">
         <h2 id="explore-h">Explore the data</h2>
-        <p>Pick a measurement to compare patients with and without diabetes. Continuous values are shown as a share of each group, so the smaller diabetic group stays visible.</p>
+        <p>Choose a variable to compare records with and without diabetes. For numeric variables, the chart shows percentages within each group, so the distributions can be compared even though the groups differ in size.</p>
         <label class="field">
-          <span>Measurement</span>
+          <span>Variable</span>
           <select id="feature-picker"></select>
         </label>
         <p class="note" id="feature-note"></p>
@@ -72,8 +72,8 @@
 
     <section class="block" aria-labelledby="corr-h">
       <div class="block-text">
-        <h2 id="corr-h">How the measurements relate</h2>
-        <p>Pearson correlation between each pair of measurements and the diabetes outcome. The bottom row is the one to read first.</p>
+        <h2 id="corr-h">Correlations between the variables</h2>
+        <p>The chart shows the Pearson correlation coefficient for each pair of variables. The bottom row shows how each variable correlates with the presence of diabetes in the records.</p>
         <ul class="hypotheses" id="hypotheses"></ul>
       </div>
       <figure class="block-chart" id="corr-chart"></figure>
@@ -81,8 +81,8 @@
 
     <section class="block" id="clusters" aria-labelledby="clusters-h">
       <div class="block-text">
-        <h2 id="clusters-h">Patient groups</h2>
-        <p>K-means clustering on age, BMI and HbA1c finds three groups without being told who has diabetes. The diabetes rate per group is measured afterwards.</p>
+        <h2 id="clusters-h">Grouping the records</h2>
+        <p>The K-means algorithm splits the records into three groups based on age, body mass index (BMI) and HbA1c. Whether a record has diabetes is not used for the grouping. The proportion of records with diabetes is then calculated for each group.</p>
         <ol class="cluster-list" id="cluster-list" start="0"></ol>
       </div>
       <figure class="block-chart" id="cluster-chart"></figure>
@@ -91,7 +91,7 @@
     <section class="block" id="models" aria-labelledby="models-h">
       <div class="block-text">
         <h2 id="models-h">Comparing the models</h2>
-        <p>Only <span data-bind="positive_pct">8.8%</span> of patients are diabetic, so a model can score high accuracy while missing real cases. The best model is picked by ROC-AUC, and recall shows how many diabetic patients each one finds.</p>
+        <p>Only <span data-bind="positive_pct">8.8%</span> of the records have diabetes, so a high share of correct predictions is not enough to judge a model. The models are compared on ROC-AUC and other metrics such as recall: the share of records with diabetes that a model identifies.</p>
         <table class="metrics" id="metrics-table"></table>
       </div>
       <div class="block-chart chart-stack">
@@ -103,28 +103,28 @@
 
     <section class="predict" id="predict" aria-labelledby="predict-h">
       <div class="predict-head">
-        <h2 id="predict-h">Try the risk estimator</h2>
-        <p>Move the sliders and both models update instantly. They run in your browser; nothing you enter leaves this page.</p>
+        <h2 id="predict-h">Explore model predictions</h2>
+        <p>Change the values to see how each model’s estimate changes. The calculations run locally in your browser. The values you enter are not sent to a server or stored.</p>
       </div>
       <div class="predict-grid">
         <form class="predict-form" id="predict-form" novalidate></form>
         <div class="predict-result" id="predict-result"></div>
         <p class="sr-only" id="predict-summary" role="status" aria-live="polite"></p>
       </div>
-      <p class="disclaimer">Educational project — not a medical device or diagnosis. The estimates describe this dataset only, have not been clinically validated, and are not anyone's actual risk.</p>
+      <p class="disclaimer">The estimates come from models trained on this dataset only. They have not been clinically validated and do not measure anyone’s actual personal risk of diabetes. The project is for educational use only.</p>
     </section>
 
     <section class="block" aria-labelledby="method-h">
       <div class="block-text">
-        <h2 id="method-h">How it was tested</h2>
+        <h2 id="method-h">Methods and checks</h2>
       </div>
       <div class="block-chart">
         <ul class="findings-list">
-          <li>The data: 100,000 records. 3,854 exact duplicates and 18 records with gender "Other" were removed, leaving 96,128. The records were split 80/20, stratified so both sets keep the same share of diabetic records.</li>
-          <li>The models: a random forest (150 trees, depth 7) and a logistic regression, both trained on the training set only. Missing values were filled with training-set averages, so the test set never influenced training.</li>
-          <li>Scoring: ROC-AUC picks the best model, because only 8.8% of records are diabetic and accuracy alone can look high while a model misses cases. Recall, precision and F1 are reported at a 0.5 cut-off.</li>
-          <li>Checks: the pipeline has automated tests. The browser predictor matched the Python models on 200 test inputs to within one part in a million.</li>
-          <li>What it cannot show: the records have no lifestyle, diet, family-history or genetic data, and their origin is not documented. Nothing has been validated clinically or on another population. This is a teaching tool, not a diagnosis, and neither model is suitable for screening.</li>
+          <li>The data: an initial set of 100,000 records. After removing 3,854 duplicate records and 18 records with “Other” in the gender field, 96,128 records remained. They were split into a training set (80%) and a test set (20%), keeping the same share of records with diabetes in each.</li>
+          <li>The models: a Random Forest (150 trees, depth 7) and a logistic regression, both trained on the training set only. Missing values were filled with averages calculated from the training set alone, so the test set never influenced training.</li>
+          <li>Evaluation: ROC-AUC, recall, precision, F1 and the share of correct predictions (accuracy). Only 8.8% of records have diabetes, so accuracy alone can look high while a model misses cases. Metrics that need a class decision use a 0.5 threshold.</li>
+          <li>Checks: the pipeline has automated tests. On 200 test inputs, the estimates calculated in the browser matched the Python models to within 0.000001.</li>
+          <li>Limitations: the dataset has no information on lifestyle, diet, family history or genetic factors, and the origin of the original records is not documented. The results have not been validated clinically or on an independent population. Neither model is suitable for medical screening.</li>
         </ul>
       </div>
     </section>
@@ -135,7 +135,7 @@
       <div class="block-chart">
         <ul class="findings-list" id="findings"></ul>
         <p class="about">Built by <a href="https://tsakioan.com/">Ioannis Tsakalidis</a>. Originally a CustomTkinter desktop app for a Gatehouse Awards qualification, then rebuilt for the web. The Python pipeline, tests and the original desktop version are on <a href="https://github.com/MrTsak/AI-Data-Analytics">GitHub</a>.</p>
-        <p class="about">Data: the <a href="https://www.kaggle.com/datasets/iammustafatz/diabetes-prediction-dataset">Diabetes Prediction Dataset</a> by iammustafatz, published on Kaggle. Licence on Kaggle: “Data files © Original Authors”. The page shows only summary results and models trained on the data, not the records. The dataset’s origin is not documented, so treat the results as illustrative.</p>
+        <p class="about">Data: the <a href="https://www.kaggle.com/datasets/iammustafatz/diabetes-prediction-dataset">Diabetes Prediction Dataset</a> by iammustafatz, published on Kaggle. Licence on Kaggle: “Data files © Original Authors”. The page shows only summary results and models trained on the data, not the records. The origin of the original data is not documented. The results are presented for educational purposes and should not be generalised to the population.</p>
       </div>
     </section>
   </main>

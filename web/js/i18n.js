@@ -28,14 +28,14 @@ const GREEK = {
   'Current smoker': 'Καπνίζει',
   'Not currently smoking': 'Δεν καπνίζει τώρα',
   'Has smoked': 'Έχει καπνίσει',
-  'Diabetes rate (%)': 'Ποσοστό διαβήτη (%)',
+  'Records with diabetes (%)': 'Ποσοστό διαβήτη (%)',
   '% of group': 'Ποσοστό της ομάδας (%)',
   'False positive rate': 'Ποσοστό ψευδώς θετικών (FPR)',
   'True positive rate (recall)': 'Ποσοστό αληθώς θετικών (TPR)',
   'Feature importance': 'Σημαντικότητα μεταβλητής',
-  'What the Random Forest relies on': 'Ποιες μεταβλητές χρησιμοποιεί περισσότερο το Random Forest',
-  Predicted: 'Πρόβλεψη μοντέλου',
-  Actual: 'Πραγματική κατηγορία',
+  'Which variables the Random Forest uses most': 'Ποιες μεταβλητές χρησιμοποιεί περισσότερο το Random Forest',
+  'Model prediction': 'Πρόβλεψη μοντέλου',
+  'Actual class': 'Πραγματική κατηγορία',
   'Random Forest': 'Random Forest',
   'Logistic Regression': 'Λογιστική παλινδρόμηση',
   // Theme button
@@ -60,7 +60,7 @@ const GREEK = {
   Low: 'Χαμηλή',
   Moderate: 'Μέτρια',
   High: 'Υψηλή',
-  'Risk scale': 'Κλίμακα εκτίμησης του μοντέλου',
+  'Model estimate scale': 'Κλίμακα εκτίμησης του μοντέλου',
 };
 
 /** Static English text to Greek (unchanged on the English page). */

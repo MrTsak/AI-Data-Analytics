@@ -60,7 +60,7 @@ export function clampInput(value, { min, max, mean }) {
   return Math.min(max, Math.max(min, n));
 }
 
-/** Features that push the logistic-regression score up most versus an average patient.
+/** Features that push the logistic-regression score up most versus the training-set averages.
  *  Smoking categories are left out: their coefficients mostly reflect who has no smoking
  *  record (largely children) rather than an effect of smoking, so naming them misleads. */
 export function explainLR(model, x, { threshold = 0.15, limit = 2 } = {}) {

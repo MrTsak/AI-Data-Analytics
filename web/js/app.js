@@ -12,10 +12,10 @@ const HYPOTHESES = [
   ['Blood glucose is strongly related to diabetes', 'https://pmc.ncbi.nlm.nih.gov/articles/PMC4484145/'],
 ];
 const FEATURE_NOTES = {
-  HbA1c_level: 'HbA1c of 6.5% or above is a standard diagnostic threshold, which is why the diabetic group sits to the right.',
-  blood_glucose_level: 'Diabetic patients cluster at higher glucose readings, with a long tail above 200 mg/dL.',
+  HbA1c_level: 'In this dataset, records with diabetes appear mostly at higher HbA1c values.',
+  blood_glucose_level: 'Records with diabetes appear more often at high glucose values, and the distribution extends above 200 mg/dL.',
   bmi: 'Many records have exactly the same BMI value: 27.32.',
-  age: 'Diabetes is rare under 40 in this dataset and rises steadily with age.',
+  age: 'In this dataset, few records under age 40 have diabetes, and the share rises with age.',
 };
 const FEATURE_NOTES_EL = {
   HbA1c_level: 'Στο συγκεκριμένο σύνολο δεδομένων, οι εγγραφές με διαβήτη εμφανίζονται κυρίως σε υψηλότερες τιμές HbA1c.',
@@ -24,13 +24,20 @@ const FEATURE_NOTES_EL = {
   age: 'Στο συγκεκριμένο σύνολο δεδομένων, οι εγγραφές με διαβήτη είναι λιγότερες στις ηλικίες κάτω των 40 ετών και το ποσοστό τους αυξάνεται με την ηλικία.',
 };
 const DEFAULT_NOTE = pick(
-  'Bars show the share of patients in each category who have diabetes.',
+  'Bars show the share of records with diabetes in each category.',
   'Οι στήλες δείχνουν το ποσοστό των εγγραφών με διαβήτη σε κάθε κατηγορία.',
 );
 
 const state = { data: null };
 const $ = (sel) => document.querySelector(sel);
 const cap = (s) => `${s.charAt(0).toUpperCase()}${s.slice(1)}`;
+// English model names inside sentences, and the English group labels for the cluster tags in clusters.json.
+const EN_MODEL = { 'Random Forest': 'the Random Forest', 'Logistic Regression': 'logistic regression' };
+const EN_GROUP = {
+  'Lowest risk': 'lowest proportion of records with diabetes',
+  'Middle risk': 'middle proportion of records with diabetes',
+  'Highest risk': 'highest proportion of records with diabetes',
+};
 // Greek forms of the model names (subject / after a preposition).
 const EL_MODEL = {
   'Random Forest': { nom: 'Το Random Forest', acc: 'το Random Forest' },
@@ -83,9 +90,9 @@ function legend(items) {
 // The cluster descriptions are English sentences built from clusters.json. On the Greek page the
 // same figures are reused and the sentence is rebuilt in Greek.
 function clusterRest(rest) {
-  if (!isGreek) return rest;
   const m = rest.match(/avg age ([\d.]+), BMI ([\d.]+), HbA1c ([\d.]+)% — diabetes rate ([\d.]+)%/);
   if (!m) return rest;
+  if (!isGreek) return `Average age: ${m[1]} years · Average BMI: ${m[2]} · Average HbA1c: ${m[3]}% · Records with diabetes: ${m[4]}%`;
   const dec = (v) => v.replace('.', ',');
   return `Μέση ηλικία: ${m[1]} έτη · Μέσο BMI: ${dec(m[2])} · Μέση HbA1c: ${dec(m[3])}% · Ποσοστό εγγραφών με διαβήτη: ${dec(m[4])}%`;
 }
@@ -97,9 +104,10 @@ function renderText(d) {
   document.querySelectorAll('[data-bind="n_rows"]').forEach((el) => setText(el, num(s.n_rows)));
   document.querySelectorAll('[data-bind="positive_pct"]').forEach((el) => setText(el, pct(s.positive_rate, 1)));
   setText($('[data-bind="hero-lede"]'), pick(
-    `${num(s.n_original)} records went in. After removing ${num(s.n_duplicates)} exact duplicates, ` +
-      `two models were trained to spot diabetes. The ${s.best} finds ${pct(best.recall, 0)} of diabetic patients it has never seen, ` +
-      `with an ROC-AUC of ${num(best.auc, 3)}.`,
+    `This educational project starts from an initial set of ${num(s.n_original)} records. After removing ${num(s.n_duplicates)} duplicate records ` +
+      `and ${num(s.n_other_gender)} records with “Other” in the gender field, ${num(s.n_rows)} records were used. Two machine-learning models were ` +
+      `trained and compared. On the test set, ${EN_MODEL[s.best]} reached an ROC-AUC of ${num(best.auc, 3)} and identified ${pct(best.recall, 0)} of the ` +
+      `records with diabetes.`,
     `Σε αυτό το εκπαιδευτικό έργο ανέλυσα ένα αρχικό σύνολο ${num(s.n_original)} εγγραφών. Μετά την αφαίρεση ${num(s.n_duplicates)} διπλότυπων ` +
       `εγγραφών και ${num(s.n_other_gender)} εγγραφών με τιμή «Άλλο» στο πεδίο φύλου, χρησιμοποιήθηκαν ${num(s.n_rows)} εγγραφές. Εκπαιδεύτηκαν και ` +
       `συγκρίθηκαν δύο μοντέλα μηχανικής μάθησης. Στο σύνολο δοκιμής, το ${s.best === 'Random Forest' ? 'Random Forest (τυχαίο δάσος)' : 'μοντέλο λογιστικής παλινδρόμησης'} πέτυχε ROC-AUC ${num(best.auc, 3)} ` +
@@ -121,11 +129,11 @@ function renderText(d) {
     li.style.setProperty('--c', c.clusters[i]);
     const [tag, rest] = text.split(': ');
     const strong = document.createElement('strong');
-    strong.textContent = isGreek ? `Ομάδα ${i + 1} — ${t(tag)}` : `Group ${i + 1}: ${tag.toLowerCase()}`;
+    strong.textContent = isGreek ? `Ομάδα ${i + 1} — ${t(tag)}` : `Group ${i + 1}: ${EN_GROUP[tag] ?? tag.toLowerCase()}`;
     const span = document.createElement('span');
     span.textContent = isGreek
       ? `${num(d.clusters.sizes[i])} εγγραφές · ${clusterRest(rest)}.`
-      : `${num(d.clusters.sizes[i])} patients. ${cap(clusterRest(rest))}.`;
+      : `${num(d.clusters.sizes[i])} records · ${clusterRest(rest)}.`;
     li.append(strong, span);
     return li;
   }));
@@ -160,11 +168,18 @@ function renderFindings(d) {
   const weakRecall = Math.max(m[s.best].recall, m[other].recall) < 0.9;
   const items = [
     pick(
-      `${cap(top[0])} and ${top[1]} carry most of the predictive signal. Together they account for most of the Random Forest's feature importance.`,
+      `The two most important variables are ${top[0]} and ${top[1]}. Together they account for most of the Random Forest’s feature importance.`,
       `Οι δύο σημαντικότερες μεταβλητές είναι: ${top[0]} και ${top[1]}. Μαζί εξηγούν το μεγαλύτερο μέρος της σημαντικότητας των μεταβλητών στο Random Forest.`,
     ),
     pick(
-      `The ${s.best} edges out ${other} (AUC ${num(m[s.best].auc, 3)} vs ${num(m[other].auc, 3)}). It finds ${pct(m[s.best].recall, 0)} of diabetic patients, and ${pct(m[s.best].precision, 0)} of the patients it flags are diabetic. ${other} finds ${pct(m[other].recall, 0)}, with ${pct(m[other].precision, 0)} of its flags diabetic. ${weakRecall ? 'Each model misses a sizable share of diabetic patients, so neither is suitable for screening.' : 'Both models find most diabetic patients.'}`,
+      `${cap(EN_MODEL[s.best])} reached a slightly higher ROC-AUC than ${EN_MODEL[other]}: ${num(m[s.best].auc, 3)} vs ${num(m[other].auc, 3)}. ` +
+        `On the test set it identified ${pct(m[s.best].recall, 0)} of the records with diabetes, against about ${pct(m[other].recall, 0)} for ${EN_MODEL[other]}. ` +
+        (weakRecall
+          ? 'Both models missed a substantial number of positive cases, so neither is suitable for medical screening.'
+          : 'Both models identify most positive cases.') +
+        (m[s.best].precision === 1
+          ? ` On this test set, every record that ${EN_MODEL[s.best]} classified as positive belonged to the diabetes class. That does not guarantee the same performance on new data.`
+          : ` Of the records that ${EN_MODEL[s.best]} classified as positive, ${pct(m[s.best].precision, 0)} belonged to the diabetes class.`),
       `${EL_MODEL[s.best].nom} πέτυχε ελαφρώς υψηλότερο ROC-AUC από ${EL_MODEL[other].acc}: ${num(m[s.best].auc, 3)} έναντι ${num(m[other].auc, 3)}. ` +
         `Στο σύνολο δοκιμής εντόπισε το ${pct(m[s.best].recall, 0)} των εγγραφών με διαβήτη, έναντι περίπου ${pct(m[other].recall, 0)} για ${EL_MODEL[other].acc}. ` +
         (weakRecall
@@ -175,15 +190,15 @@ function renderFindings(d) {
           : ` Από τις εγγραφές που ταξινομήθηκαν ως θετικές από ${EL_MODEL[s.best].acc}, το ${pct(m[s.best].precision, 0)} ανήκε στην κατηγορία με διαβήτη.`),
     ),
     pick(
-      `Group ${hi + 1} has a diabetes rate of ${pct(rates[hi])}, against ${pct(s.positive_rate)} overall. Clustering alone picks out a high-risk population.`,
+      `Group ${hi + 1} has the highest proportion of records with diabetes: ${pct(rates[hi])}, against ${pct(s.positive_rate)} across the whole dataset.`,
       `Η ομάδα ${hi + 1} συγκεντρώνει μεγαλύτερο ποσοστό εγγραφών με διαβήτη: ${pct(rates[hi])}, έναντι ${pct(s.positive_rate)} στο σύνολο των δεδομένων.`,
     ),
     pick(
-      `${num(s.n_duplicates)} duplicate records and ${s.n_other_gender} records with gender "Other" (too few to model) were removed before training, so test scores aren't inflated by repeated rows.`,
+      `Before training, ${num(s.n_duplicates)} duplicate records were removed so that repeated rows could not inflate the test scores. A further ${s.n_other_gender} records with “Other” in the gender field were removed, as there were too few to model. This limits what the models cover and should be kept in mind when interpreting the results.`,
       `Πριν από την εκπαίδευση αφαιρέθηκαν οι διπλότυπες εγγραφές (${num(s.n_duplicates)}). Αφαιρέθηκαν επίσης ${s.n_other_gender} εγγραφές με τιμή «Άλλο» στο πεδίο φύλου· αυτή η επιλογή περιορίζει την κάλυψη του μοντέλου και πρέπει να λαμβάνεται υπόψη στην ερμηνεία των αποτελεσμάτων.`,
     ),
     pick(
-      'The dataset has no lifestyle, diet, family-history or genetic data, and the results have not been clinically validated.',
+      'The dataset has no information on lifestyle, diet, family history or genetic factors, and the results have not been clinically validated.',
       'Το σύνολο δεδομένων δεν περιλαμβάνει πληροφορίες για τον τρόπο ζωής, τη διατροφή, το οικογενειακό ιστορικό ή γενετικούς παράγοντες, και τα αποτελέσματα δεν έχουν επικυρωθεί κλινικά.',
     ),
   ];
@@ -201,7 +216,7 @@ function renderExplore() {
   if (d.explore.histograms[feat]) {
     const name = featureLabel(feat, LABELS);
     fig.append(legend([['No diabetes', c.neg, 'solid'], ['Diabetes', c.pos, 'outline']]), charts.describe(charts.histogram(d.explore.histograms[feat], feat, w),
-      pick(`Histogram of ${name} for patients with and without diabetes`, `Ιστόγραμμα: ${name} σε εγγραφές με και χωρίς διαβήτη`)));
+      pick(`Histogram of ${name} for records with and without diabetes`, `Ιστόγραμμα: ${name} σε εγγραφές με και χωρίς διαβήτη`)));
   } else {
     const name = featureLabel(feat, LABELS);
     fig.append(charts.describe(charts.categoryRates(d.explore.categories[feat], feat, w),
@@ -216,12 +231,12 @@ function renderCharts() {
   const d = state.data;
   renderExplore();
   mount($('#corr-chart'), charts.describe(charts.correlationHeatmap(d.explore.correlation, widthOf($('#corr-chart'))),
-    pick('Correlation heatmap of the measurements and diabetes', 'Χάρτης συσχέτισης των μετρήσεων και του διαβήτη')));
+    pick('Correlation heatmap of the variables and diabetes', 'Χάρτης συσχέτισης των μετρήσεων και του διαβήτη')));
   const c = charts.palette();
   mount($('#cluster-chart'),
     legend(charts.CLUSTER_SYMBOLS.map((shape, i) => [{ text: `${pick('Group', 'Ομάδα')} ${i + 1}` }, c.clusters[i], shape])),
     charts.describe(charts.clusterScatter(d.clusters.grid, widthOf($('#cluster-chart'))),
-      pick('Patient groups plotted by HbA1c and BMI', 'Ομάδες εγγραφών κατά HbA1c και BMI')));
+      pick('Record groups by HbA1c and BMI', 'Ομάδες εγγραφών κατά HbA1c και BMI')));
   const stack = $('#roc-chart');
   mount(stack,
     legend(MODEL_NAMES.map((n, i) => [{ text: modelName(n) }, [c.ink, c.mid][i], i ? 'dash' : 'line'])),
