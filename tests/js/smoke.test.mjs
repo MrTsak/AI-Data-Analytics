@@ -277,3 +277,31 @@ test('chart numbers follow each page language', { skip: !chromium && 'playwright
     server.close();
   }
 });
+
+// The research sources are shown as background, apart from the dataset's own results, and the BMI
+// claim cites NIDDK (the earlier ESC press-release link had been removed and showed "Page not found").
+test('research sources are labelled as background and point at their pages', { skip: !chromium && 'playwright not installed', timeout: 60000 }, async () => {
+  const server = await serve();
+  const browser = await chromium.launch();
+  try {
+    for (const [lang, lead, bmi] of [
+      ['en', /Background from published sources, not results from this dataset/, /^Overweight and obesity are associated with a higher risk of type 2 diabetes \(source\)$/],
+      ['el', /Στοιχεία από δημοσιευμένες πηγές, όχι αποτελέσματα από αυτό το σύνολο δεδομένων/, /^Το υπερβολικό βάρος και η παχυσαρκία συνδέονται με αυξημένο κίνδυνο εμφάνισης διαβήτη τύπου 2\. \(πηγή\)$/],
+    ]) {
+      const page = await browser.newPage();
+      await page.goto(`http://localhost:${server.address().port}${PREFIX}${lang === 'el' ? 'el/' : ''}`, { waitUntil: 'networkidle' });
+      await page.waitForSelector('#hypotheses li');
+      assert.match(await page.textContent('.hypotheses-lead'), lead);
+      const items = await page.$$eval('#hypotheses li', (lis) => lis.map((li) => ({ text: li.textContent.trim(), href: li.querySelector('a').href })));
+      assert.equal(items.length, 4);
+      assert.ok(items.every((i) => /^https:\/\//.test(i.href) && !i.href.includes('escardio.org')), JSON.stringify(items));
+      const bmiItem = items.find((i) => bmi.test(i.text));
+      assert.ok(bmiItem, `${lang}: BMI background item: ${JSON.stringify(items.map((i) => i.text))}`);
+      assert.equal(bmiItem.href, 'https://www.niddk.nih.gov/health-information/diabetes/overview/risk-factors-type-2-diabetes');
+      await page.close();
+    }
+  } finally {
+    await browser.close();
+    server.close();
+  }
+});

@@ -152,7 +152,8 @@ select:hover, input[type="number"]:hover { border-color: var(--accent); }
 .key { display: inline-block; width: 1.6em; height: .7em; margin-right: .4em; vertical-align: 0.05em; }
 .key-dot { width: .8em; height: .8em; margin-right: .35em; vertical-align: -0.05em; }
 
-.hypotheses { padding-left: 1.1rem; margin: 1rem 0 0; }
+.hypotheses-lead { margin: 1.25rem 0 0; }
+.hypotheses { padding-left: 1.1rem; margin: .5rem 0 0; }
 .hypotheses li { margin-bottom: .5rem; }
 .hypotheses li::marker, .findings-list li::marker { color: var(--accent); }
 .cluster-list { list-style: none; padding: 0; margin: 1.25rem 0 0; display: grid; gap: .75rem; }

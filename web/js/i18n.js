@@ -49,7 +49,7 @@ const GREEK = {
   Light: 'Φωτεινό θέμα',
   // Charts, metrics, hypotheses and feature notes
   'Higher HbA1c goes with higher diabetes risk': 'Υψηλότερες τιμές HbA1c συνδέονται με αυξημένο κίνδυνο διαβήτη.',
-  'BMI is positively related to diabetes risk': 'Υψηλότερος δείκτης μάζας σώματος συνδέεται με αυξημένο κίνδυνο διαβήτη.',
+  'Overweight and obesity are associated with a higher risk of type 2 diabetes': 'Το υπερβολικό βάρος και η παχυσαρκία συνδέονται με αυξημένο κίνδυνο εμφάνισης διαβήτη τύπου 2.',
   'Risk rises with age': 'Ο κίνδυνος διαβήτη αυξάνεται με την ηλικία.',
   'Blood glucose is strongly related to diabetes': 'Οι τιμές γλυκόζης αίματος συνδέονται στενά με τον διαβήτη.',
   source: 'πηγή',
