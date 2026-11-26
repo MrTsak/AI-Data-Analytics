@@ -133,3 +133,40 @@ test('Greek page renders the same charts in Greek', { skip: !chromium && 'playwr
     server.close();
   }
 });
+
+// Each group's histogram is a percentage of that group, so the two bars in a bin have different
+// denominators and must overlap from zero. Stacked, a 20% and a 30% bar would end at 50%.
+test('histogram bars overlap from zero instead of stacking', { skip: !chromium && 'playwright not installed', timeout: 60000 }, async () => {
+  const server = await serve();
+  const browser = await chromium.launch();
+  try {
+    const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+    await page.goto(`http://localhost:${server.address().port}${PREFIX}`, { waitUntil: 'networkidle' });
+    await page.waitForSelector('#explore-chart svg', { timeout: 10000 });
+    const bars = await page.evaluate(async () => {
+      const charts = await import('./js/charts.js');
+      const c = charts.palette();
+      // Bin 0 holds 20 of 100 records without diabetes (20%) and 30 of 100 with diabetes (30%).
+      const plot = charts.histogram({ edges: [0, 1, 2], neg: [20, 80], pos: [30, 70] }, 'age', 600);
+      const y = plot.scale('y');
+      return [...plot.querySelectorAll('rect')]
+        .filter((r) => [c.neg, c.pos].includes(r.getAttribute('fill')))
+        .map((r) => ({
+          group: r.getAttribute('fill') === c.neg ? 'No diabetes' : 'Diabetes',
+          x: +r.getAttribute('x'),
+          top: y.invert(+r.getAttribute('y')),
+          bottom: y.invert(+r.getAttribute('y') + +r.getAttribute('height')),
+        }));
+    });
+    const firstX = Math.min(...bars.map((b) => b.x));
+    const bin0 = Object.fromEntries(bars.filter((b) => Math.abs(b.x - firstX) < 1).map((b) => [b.group, b]));
+    assert.ok(bin0['No diabetes'] && bin0.Diabetes, `both groups drawn in the first bin: ${JSON.stringify(bars)}`);
+    for (const [group, want] of [['No diabetes', 20], ['Diabetes', 30]]) {
+      assert.ok(Math.abs(bin0[group].top - want) < 0.05, `${group} bar ends at ${bin0[group].top.toFixed(2)}%, expected ${want}%`);
+      assert.ok(Math.abs(bin0[group].bottom) < 0.05, `${group} bar starts at ${bin0[group].bottom.toFixed(2)}%, expected 0%`);
+    }
+  } finally {
+    await browser.close();
+    server.close();
+  }
+});
