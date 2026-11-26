@@ -280,7 +280,7 @@ test('chart numbers follow each page language', { skip: !chromium && 'playwright
 
 // The research sources are shown as background, apart from the dataset's own results, and the BMI
 // claim cites NIDDK (the earlier ESC press-release link had been removed and showed "Page not found").
-test('research sources are labelled as background and point at their pages', { skip: !chromium && 'playwright not installed', timeout: 60000 }, async () => {
+test('research sources are labelled as background and cite the checked NIDDK pages', { skip: !chromium && 'playwright not installed', timeout: 60000 }, async () => {
   const server = await serve();
   const browser = await chromium.launch();
   try {
@@ -295,6 +295,13 @@ test('research sources are labelled as background and point at their pages', { s
       const items = await page.$$eval('#hypotheses li', (lis) => lis.map((li) => ({ text: li.textContent.trim(), href: li.querySelector('a').href })));
       assert.equal(items.length, 4);
       assert.ok(items.every((i) => /^https:\/\//.test(i.href) && !i.href.includes('escardio.org')), JSON.stringify(items));
+      // Every claim cites one of the two NIDDK pages it was checked against.
+      const NIDDK = ['https://www.niddk.nih.gov/health-information/diabetes/overview/tests-diagnosis', 'https://www.niddk.nih.gov/health-information/diabetes/overview/risk-factors-type-2-diabetes'];
+      assert.deepEqual(items.map((i) => i.href), [NIDDK[0], NIDDK[1], NIDDK[1], NIDDK[0]], `${lang}: sources`);
+      const expected = lang === 'el'
+        ? [/^Τιμή HbA1c 5,7–6,4% υποδηλώνει προδιαβήτη/, /^Το υπερβολικό βάρος/, /^Ο κίνδυνος εμφάνισης διαβήτη τύπου 2 αυξάνεται με την ηλικία, ιδίως από τα 35/, /^Γλυκόζη αίματος νηστείας 100–125 mg\/dL υποδηλώνει προδιαβήτη· από 126 mg\/dL/]
+        : [/^An HbA1c of 5\.7–6\.4% indicates prediabetes/, /^Overweight and obesity/, /^The risk of type 2 diabetes increases with age, especially from age 35/, /^A fasting blood glucose of 100–125 mg\/dL indicates prediabetes; 126 mg\/dL or above/];
+      items.forEach((item, i) => assert.match(item.text, expected[i], `${lang} item ${i + 1}`));
       const bmiItem = items.find((i) => bmi.test(i.text));
       assert.ok(bmiItem, `${lang}: BMI background item: ${JSON.stringify(items.map((i) => i.text))}`);
       assert.equal(bmiItem.href, 'https://www.niddk.nih.gov/health-information/diabetes/overview/risk-factors-type-2-diabetes');

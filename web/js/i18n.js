@@ -48,10 +48,10 @@ const GREEK = {
   Dark: 'Σκούρο θέμα',
   Light: 'Φωτεινό θέμα',
   // Charts, metrics, hypotheses and feature notes
-  'Higher HbA1c goes with higher diabetes risk': 'Υψηλότερες τιμές HbA1c συνδέονται με αυξημένο κίνδυνο διαβήτη.',
+  'An HbA1c of 5.7–6.4% indicates prediabetes, which raises the chance of developing type 2 diabetes; 6.5% or above indicates diabetes': 'Τιμή HbA1c 5,7–6,4% υποδηλώνει προδιαβήτη, που αυξάνει την πιθανότητα εμφάνισης διαβήτη τύπου 2· από 6,5% και πάνω υποδηλώνει διαβήτη.',
   'Overweight and obesity are associated with a higher risk of type 2 diabetes': 'Το υπερβολικό βάρος και η παχυσαρκία συνδέονται με αυξημένο κίνδυνο εμφάνισης διαβήτη τύπου 2.',
-  'Risk rises with age': 'Ο κίνδυνος διαβήτη αυξάνεται με την ηλικία.',
-  'Blood glucose is strongly related to diabetes': 'Οι τιμές γλυκόζης αίματος συνδέονται στενά με τον διαβήτη.',
+  'The risk of type 2 diabetes increases with age, especially from age 35': 'Ο κίνδυνος εμφάνισης διαβήτη τύπου 2 αυξάνεται με την ηλικία, ιδίως από τα 35 έτη και άνω.',
+  'A fasting blood glucose of 100–125 mg/dL indicates prediabetes; 126 mg/dL or above indicates diabetes': 'Γλυκόζη αίματος νηστείας 100–125 mg/dL υποδηλώνει προδιαβήτη· από 126 mg/dL και πάνω υποδηλώνει διαβήτη.',
   source: 'πηγή',
   'Lowest risk': 'Χαμηλότερο ποσοστό διαβήτη',
   'Middle risk': 'Ενδιάμεσο ποσοστό διαβήτη',

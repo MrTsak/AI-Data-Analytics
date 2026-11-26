@@ -7,10 +7,10 @@ const MODEL_NAMES = ['Random Forest', 'Logistic Regression'];
 const FILES = ['summary', 'explore', 'clusters', 'models', 'model_lr', 'model_rf', 'form'];
 // Background from published sources, shown apart from this dataset's own results.
 const HYPOTHESES = [
-  ['Higher HbA1c goes with higher diabetes risk', 'https://pmc.ncbi.nlm.nih.gov/articles/PMC4933534/'],
+  ['An HbA1c of 5.7–6.4% indicates prediabetes, which raises the chance of developing type 2 diabetes; 6.5% or above indicates diabetes', 'https://www.niddk.nih.gov/health-information/diabetes/overview/tests-diagnosis'],
   ['Overweight and obesity are associated with a higher risk of type 2 diabetes', 'https://www.niddk.nih.gov/health-information/diabetes/overview/risk-factors-type-2-diabetes'],
-  ['Risk rises with age', 'https://www.thelancet.com/journals/lanhl/article/PIIS2666-7568(21)00177-X/fulltext'],
-  ['Blood glucose is strongly related to diabetes', 'https://pmc.ncbi.nlm.nih.gov/articles/PMC4484145/'],
+  ['The risk of type 2 diabetes increases with age, especially from age 35', 'https://www.niddk.nih.gov/health-information/diabetes/overview/risk-factors-type-2-diabetes'],
+  ['A fasting blood glucose of 100–125 mg/dL indicates prediabetes; 126 mg/dL or above indicates diabetes', 'https://www.niddk.nih.gov/health-information/diabetes/overview/tests-diagnosis'],
 ];
 const FEATURE_NOTES = {
   HbA1c_level: 'In this dataset, records with diabetes appear mostly at higher HbA1c values.',
