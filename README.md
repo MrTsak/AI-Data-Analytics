@@ -78,7 +78,7 @@ web/                 Static site: copy this folder to deploy
   index.html, styles.css
   js/                app.js, charts.js, predictor.js, models.js (model runtime)
   data/              generated results and exported models
-  vendor/            d3, Observable Plot, Atkinson Hyperlegible font (with licences)
+  vendor/            d3, Observable Plot, DM Sans and Manrope fonts (with licences)
 main.py              Desktop app (original Gatehouse version, fixed)
 tests/               pytest, Node and browser tests
 ```
@@ -147,4 +147,4 @@ The smoke test serves `web/` under `/projects/diabetes/`, checks that every char
 
 ## Licence
 
-MIT, see [LICENSE](LICENSE). Bundled third-party files in `web/vendor/` keep their own licences: d3 (ISC), Observable Plot (ISC), and Atkinson Hyperlegible (SIL Open Font License).
+MIT, see [LICENSE](LICENSE). Bundled third-party files in `web/vendor/` keep their own licences: d3 (ISC), Observable Plot (ISC), and the DM Sans and Manrope fonts (SIL Open Font License), the same fonts as tsakioan.com.
