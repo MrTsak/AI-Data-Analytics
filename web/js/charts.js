@@ -1,5 +1,5 @@
 // Chart builders. Each returns a DOM node built with Observable Plot (loaded as a global).
-import { t, featureLabel, modelName, num, pick } from './i18n.js';
+import { t, featureLabel, modelName, num, pick, isGreek } from './i18n.js';
 
 const Plot = globalThis.Plot;
 
@@ -66,16 +66,21 @@ const edgeDigits = (feat, edges) => {
   return width > 0 ? Math.max(0, Math.ceil(-Math.log10(width))) : 0;
 };
 
+/** The displayed range of bin i, e.g. "6,4–6,6" on the Greek page. The bin edges themselves are unchanged. */
+export function binRange(feat, edges, i) {
+  const digits = edgeDigits(feat, edges);
+  return `${num(edges[i], digits)}–${num(edges[i + 1], digits)}`;
+}
+
 /** Overlaid histograms as % of each group. */
 export function histogram(h, feat, width) {
   const c = palette();
   const negTotal = h.neg.reduce((a, b) => a + b, 0);
   const posTotal = h.pos.reduce((a, b) => a + b, 0);
-  const digits = edgeDigits(feat, h.edges);
   const rows = [];
   h.neg.forEach((n, i) => {
-    rows.push({ x1: h.edges[i], x2: h.edges[i + 1], y: (n / negTotal) * 100, group: 'No diabetes' });
-    rows.push({ x1: h.edges[i], x2: h.edges[i + 1], y: (h.pos[i] / posTotal) * 100, group: 'Diabetes' });
+    rows.push({ x1: h.edges[i], x2: h.edges[i + 1], y: (n / negTotal) * 100, group: 'No diabetes', bin: i });
+    rows.push({ x1: h.edges[i], x2: h.edges[i + 1], y: (h.pos[i] / posTotal) * 100, group: 'Diabetes', bin: i });
   });
   return Plot.plot({
     ...base(c, width), height: Math.min(380, width * 0.62),
@@ -90,7 +95,7 @@ export function histogram(h, feat, width) {
         fillOpacity: (d) => (d.group === 'Diabetes' ? 0.3 : 0.6),
         stroke: (d) => (d.group === 'Diabetes' ? c.pos : 'none'), strokeWidth: 1.5,
         tip: true,
-        title: (d) => `${t(d.group)}\n${num(d.x1, digits)}–${num(d.x2, digits)}: ${num(d.y, 1)}% ${pick('of group', 'της ομάδας')}` }),
+        title: (d) => `${t(d.group)}\n${binRange(feat, h.edges, d.bin)}: ${num(d.y, 1)}% ${pick('of group', 'της ομάδας')}` }),
       Plot.ruleY([0], { stroke: c.soft }),
     ],
   });
@@ -139,8 +144,12 @@ export function correlationHeatmap(corr, width) {
   const marginLeft = Math.ceil(16 + Math.max(...names.map((name) => name.length)) * 6.8);
   // On narrow screens the cells shrink, so drop the leading zero (".26") and use smaller text.
   const cell = (size - marginLeft - 20) / n;
-  const fontSize = cell < 44 ? 10 : 11;
-  const short = (r) => (r === 1 ? '1' : num(r, 2).replace(/^(-?)0(?=[.,])/, '$1'));
+  // English drops the leading zero (".26") to fit small cells; Greek keeps it ("0,26").
+  const short = (r) => (r === 1 ? '1' : isGreek ? num(r, 2) : num(r, 2).replace(/^(-?)0(?=[.,])/, '$1'));
+  // Size the cell labels so the longest one fits inside its cell with a little room on each side
+  // (digits are about 0.6em wide); never larger than before, never below 8px.
+  const longest = Math.max(...rows.map((d) => short(d.r).length));
+  const fontSize = Math.max(8, Math.min(cell < 44 ? 10 : 11, Math.floor((cell - 6) / (longest * 0.62))));
   return Plot.plot({
     ...base(c, size), height: size * 0.9, marginLeft, marginBottom: 110,
     x: { domain: names, label: null, tickRotate: -35 },

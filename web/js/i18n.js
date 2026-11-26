@@ -3,6 +3,12 @@
 export const isGreek = document.documentElement.lang === 'el';
 export const locale = isGreek ? 'el-GR' : 'en-US';
 
+// Chart axes are drawn by Observable Plot with d3's number format. On the Greek page, give d3 the
+// Greek separators (0,5 and 1.000), so ticks match the rest of the page. Only the labels change.
+if (isGreek && globalThis.d3?.formatDefaultLocale) {
+  globalThis.d3.formatDefaultLocale({ decimal: ',', thousands: '.', grouping: [3], currency: ['', '\u00a0€'] });
+}
+
 /** Pick the English or Greek text. */
 export const pick = (en, gr) => (isGreek ? gr : en);
 
