@@ -210,3 +210,70 @@ test('histogram tooltips format bin edges in the page language', { skip: !chromi
     server.close();
   }
 });
+
+// Greek numbers use a decimal comma with a leading zero ("0,26"); English keeps its own format.
+// Only the labels change: the bin edges, data and model outputs are untouched.
+test('chart numbers follow each page language', { skip: !chromium && 'playwright not installed', timeout: 90000 }, async () => {
+  const server = await serve();
+  const browser = await chromium.launch();
+  try {
+    const decimalPoint = /(^|[^\d])(\.\d|\d\.\d{1,2}(?!\d))/; // 0.5, .26, 3.5 — but not Greek thousands like 17.530
+    for (const lang of ['el', 'en']) {
+      const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+      await page.goto(`http://localhost:${server.address().port}${PREFIX}${lang === 'el' ? 'el/' : ''}`, { waitUntil: 'networkidle' });
+      await page.waitForSelector('.readout-value', { timeout: 10000 });
+      const shown = await page.evaluate(() => ({
+        chartText: [...document.querySelectorAll('main svg text')].map((t) => t.textContent.trim()).filter((t) => /\d/.test(t)),
+        corr: [...document.querySelectorAll('#corr-chart svg text')].map((t) => t.textContent.trim()).filter((t) => /^[\d.,]+$/.test(t)),
+        roc: [...document.querySelectorAll('#roc-chart svg text')].map((t) => t.textContent.trim()),
+        table: [...document.querySelectorAll('#metrics-table td')].map((t) => t.textContent),
+        readouts: [...document.querySelectorAll('.readout-value')].map((t) => t.textContent),
+        scale: document.querySelector('.scale').getAttribute('aria-label'),
+      }));
+      if (lang === 'el') {
+        const offenders = [...shown.chartText, ...shown.table, ...shown.readouts, shown.scale].filter((t) => decimalPoint.test(t));
+        assert.deepEqual(offenders, [], 'no decimal points on the Greek page');
+        assert.ok(shown.corr.includes('0,26') && !shown.corr.some((v) => v.startsWith(',')), `correlation cells keep the leading zero: ${shown.corr.slice(0, 6)}`);
+        assert.ok(shown.roc.includes('0,5'), 'ROC axis ticks use a comma');
+        assert.match(shown.table.join(' '), /0,963/);
+        assert.match(shown.scale, /\d,\d%/);
+        // A tooltip, as a visitor sees it.
+        await page.locator('#corr-chart').scrollIntoViewIfNeeded();
+        const cell = await page.locator('#corr-chart svg rect').nth(1).boundingBox();
+        await page.mouse.move(cell.x + cell.width / 2, cell.y + cell.height / 2);
+        await page.waitForTimeout(200);
+        const tip = await page.evaluate(() => [...document.querySelectorAll('#corr-chart svg text')].map((t) => t.textContent).find((t) => t.includes('r =')) || '');
+        assert.match(tip, /r = 0,\d\d/, `correlation tooltip: ${tip}`);
+      } else {
+        assert.ok(shown.corr.includes('.26'), 'English correlation cells keep their compact form');
+        assert.ok(shown.roc.includes('0.5'), 'English ROC ticks use a point');
+        assert.match(shown.table.join(' '), /0\.963/);
+      }
+      // Every histogram bin keeps a distinct, ordered label that rounds its true edges.
+      const bins = await page.evaluate(async () => {
+        const charts = await import('../js/charts.js'.replace('../', document.documentElement.lang === 'el' ? '../' : './'));
+        const res = await fetch(new URL('data/explore.json', new URL(document.documentElement.lang === 'el' ? '../' : './', location.href)));
+        const { histograms } = await res.json();
+        return Object.entries(histograms).map(([feat, h]) => ({
+          feat, edges: h.edges, ranges: h.neg.map((_, i) => charts.binRange(feat, h.edges, i)),
+        }));
+      });
+      const parse = (s) => Number(lang === 'el' ? s.replace(/\./g, '').replace(',', '.') : s.replace(/,/g, ''));
+      for (const { feat, edges, ranges } of bins) {
+        assert.equal(new Set(ranges).size, ranges.length, `${lang} ${feat}: every bin range is distinct`);
+        ranges.forEach((r, i) => {
+          const [lo, hi] = r.split('–');
+          const decimals = (lo.split(lang === 'el' ? ',' : '.')[1] || '').length;
+          const tolerance = 0.5 * 10 ** -decimals + 1e-9;
+          assert.ok(parse(lo) < parse(hi), `${lang} ${feat} bin ${i}: ${r} increases`);
+          assert.ok(Math.abs(parse(lo) - edges[i]) <= tolerance && Math.abs(parse(hi) - edges[i + 1]) <= tolerance, `${lang} ${feat} bin ${i}: ${r} rounds ${edges[i]}–${edges[i + 1]}`);
+          if (lang === 'el') assert.doesNotMatch(r, decimalPoint, `${feat}: ${r} uses a decimal comma`);
+        });
+      }
+      await page.close();
+    }
+  } finally {
+    await browser.close();
+    server.close();
+  }
+});
