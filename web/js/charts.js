@@ -71,7 +71,10 @@ export function histogram(h, feat, width) {
     y: { label: t('% of group'), grid: true },
     color: { domain: ['No diabetes', 'Diabetes'], range: [c.neg, c.pos] },
     marks: [
-      Plot.rectY(rows, { x1: 'x1', x2: 'x2', y: 'y', fill: 'group', fillOpacity: 0.55, inset: 0.5,
+      Plot.rectY(rows, { x1: 'x1', x2: 'x2', y: 'y', fill: 'group', inset: 0.5,
+        // Two cues besides colour: "No diabetes" is a solid bar, "Diabetes" an outlined, lighter one.
+        fillOpacity: (d) => (d.group === 'Diabetes' ? 0.3 : 0.6),
+        stroke: (d) => (d.group === 'Diabetes' ? c.pos : 'none'), strokeWidth: 1.5,
         tip: true,
         title: (d) => `${t(d.group)}\n${d.x1}–${d.x2}: ${num(d.y, 1)}% ${pick('of group', 'της ομάδας')}` }),
       Plot.ruleY([0], { stroke: c.soft }),
@@ -139,6 +142,8 @@ export function correlationHeatmap(corr, width) {
   });
 }
 
+export const CLUSTER_SYMBOLS = ['circle', 'square', 'triangle'];
+
 // Each dot is a group of patients who share an HbA1c band, a BMI band and a cluster.
 // Its size shows how many patients it holds. Groups under 5 people are not published.
 export function clusterScatter(grid, width) {
@@ -149,8 +154,10 @@ export function clusterScatter(grid, width) {
     y: { label: 'BMI', grid: true },
     r: { range: [2, 12] },
     color: { domain: [0, 1, 2], range: c.clusters },
+    // Each group also has its own shape, so the groups stay apart without colour.
+    symbol: { domain: [0, 1, 2], range: CLUSTER_SYMBOLS },
     marks: [
-      Plot.dot(grid, { x: 'HbA1c_level', y: 'bmi', fill: 'cluster', r: 'n', fillOpacity: 0.55 }),
+      Plot.dot(grid, { x: 'HbA1c_level', y: 'bmi', fill: 'cluster', symbol: 'cluster', r: 'n', fillOpacity: 0.55 }),
     ],
   });
 }
@@ -165,10 +172,12 @@ export function rocChart(metrics, names, width) {
     ...base(c, width), height: Math.min(380, width * 0.7),
     x: xAxis(t('False positive rate'), { domain: [0, 1] }),
     y: { label: t('True positive rate (recall)'), domain: [0, 1], grid: true },
-    color: { domain: shown, range: colors, legend: true },
+    color: { domain: shown, range: colors },
     marks: [
-      Plot.line([[0, 0], [1, 1]], { stroke: c.rule, strokeDasharray: '4 4' }),
-      Plot.line(rows, { x: 'fpr', y: 'tpr', stroke: 'name', strokeWidth: 2.25 }),
+      Plot.line([[0, 0], [1, 1]], { stroke: c.rule, strokeDasharray: '2 4' }),
+      // Random Forest is a solid line, Logistic Regression a dashed one.
+      ...shown.map((name, i) => Plot.line(rows.filter((d) => d.name === name),
+        { x: 'fpr', y: 'tpr', stroke: colors[i], strokeWidth: 2.25, strokeDasharray: i ? '7 4' : null })),
     ],
   });
 }

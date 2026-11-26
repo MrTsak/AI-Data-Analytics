@@ -53,17 +53,28 @@ function widthOf(el) {
   return Math.max(280, Math.floor(el.getBoundingClientRect().width));
 }
 
-function mount(el, node) {
-  el.replaceChildren(node);
+function mount(el, ...nodes) {
+  el.replaceChildren(...nodes);
 }
+
+// Legend keys draw the same cue as the chart: bar fill, outline, line style or dot shape.
+const SWATCH = {
+  solid: (c) => `<i class="swatch" style="background:${c};opacity:.75"></i>`,
+  outline: (c) => `<i class="swatch" style="border:2px solid ${c};background:color-mix(in srgb, ${c} 30%, transparent)"></i>`,
+  line: (c) => `<svg class="key" viewBox="0 0 26 10" aria-hidden="true"><line x1="1" y1="5" x2="25" y2="5" stroke="${c}" stroke-width="2.5"/></svg>`,
+  dash: (c) => `<svg class="key" viewBox="0 0 26 10" aria-hidden="true"><line x1="1" y1="5" x2="25" y2="5" stroke="${c}" stroke-width="2.5" stroke-dasharray="7 4"/></svg>`,
+  circle: (c) => `<svg class="key key-dot" viewBox="0 0 12 12" aria-hidden="true"><circle cx="6" cy="6" r="5" fill="${c}"/></svg>`,
+  square: (c) => `<svg class="key key-dot" viewBox="0 0 12 12" aria-hidden="true"><rect x="1.5" y="1.5" width="9" height="9" fill="${c}"/></svg>`,
+  triangle: (c) => `<svg class="key key-dot" viewBox="0 0 12 12" aria-hidden="true"><path d="M6 .8 11.4 10.6H.6z" fill="${c}"/></svg>`,
+};
 
 function legend(items) {
   const p = document.createElement('p');
   p.className = 'legend';
-  for (const [label, color] of items) {
+  for (const [label, color, kind = 'solid'] of items) {
     const s = document.createElement('span');
-    s.innerHTML = `<i class="swatch" style="background:${color}"></i>`;
-    s.append(t(label));
+    s.innerHTML = SWATCH[kind](color);
+    s.append(typeof label === 'string' ? t(label) : label.text);
     p.append(s);
   }
   return p;
@@ -189,7 +200,7 @@ function renderExplore() {
   const fig = document.createDocumentFragment();
   if (d.explore.histograms[feat]) {
     const name = featureLabel(feat, LABELS);
-    fig.append(legend([['No diabetes', c.neg], ['Diabetes', c.pos]]), charts.describe(charts.histogram(d.explore.histograms[feat], feat, w),
+    fig.append(legend([['No diabetes', c.neg, 'solid'], ['Diabetes', c.pos, 'outline']]), charts.describe(charts.histogram(d.explore.histograms[feat], feat, w),
       pick(`Histogram of ${name} for patients with and without diabetes`, `Ιστόγραμμα: ${name} σε εγγραφές με και χωρίς διαβήτη`)));
   } else {
     const name = featureLabel(feat, LABELS);
@@ -206,11 +217,16 @@ function renderCharts() {
   renderExplore();
   mount($('#corr-chart'), charts.describe(charts.correlationHeatmap(d.explore.correlation, widthOf($('#corr-chart'))),
     pick('Correlation heatmap of the measurements and diabetes', 'Χάρτης συσχέτισης των μετρήσεων και του διαβήτη')));
-  mount($('#cluster-chart'), charts.describe(charts.clusterScatter(d.clusters.grid, widthOf($('#cluster-chart'))),
-    pick('Patient groups plotted by HbA1c and BMI', 'Ομάδες εγγραφών κατά HbA1c και BMI')));
+  const c = charts.palette();
+  mount($('#cluster-chart'),
+    legend(charts.CLUSTER_SYMBOLS.map((shape, i) => [{ text: `${pick('Group', 'Ομάδα')} ${i + 1}` }, c.clusters[i], shape])),
+    charts.describe(charts.clusterScatter(d.clusters.grid, widthOf($('#cluster-chart'))),
+      pick('Patient groups plotted by HbA1c and BMI', 'Ομάδες εγγραφών κατά HbA1c και BMI')));
   const stack = $('#roc-chart');
-  mount(stack, charts.describe(charts.rocChart(d.models.metrics, MODEL_NAMES, widthOf(stack)),
-    pick('ROC curves of the two models', 'Καμπύλες ROC των δύο μοντέλων')));
+  mount(stack,
+    legend(MODEL_NAMES.map((n, i) => [{ text: modelName(n) }, [c.ink, c.mid][i], i ? 'dash' : 'line'])),
+    charts.describe(charts.rocChart(d.models.metrics, MODEL_NAMES, widthOf(stack)),
+      pick('ROC curves of the two models', 'Καμπύλες ROC των δύο μοντέλων')));
   const conf = $('#confusion-charts');
   const cw = conf.getBoundingClientRect().width;
   const each = cw < 480 ? cw : (cw - 24) / 2;
@@ -219,7 +235,6 @@ function renderCharts() {
   mount($('#importance-chart'), charts.describe(charts.importanceBars(d.models.importances, widthOf($('#importance-chart'))),
     pick('Feature importance in the Random Forest', 'Σημαντικότητα μεταβλητών στο Random Forest')));
   // cluster list colours follow the theme
-  const c = charts.palette();
   document.querySelectorAll('#cluster-list li').forEach((li, i) => li.style.setProperty('--c', c.clusters[i]));
 }
 

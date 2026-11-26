@@ -149,6 +149,8 @@ select:hover, input[type="number"]:hover { border-color: var(--accent); }
 .chart-title { font-weight: 600; font-size: .95rem; margin: 0 0 .5rem; }
 .legend { display: flex; gap: 1rem; font-size: .9rem; color: var(--ink-soft); margin: 0 0 .5rem; flex-wrap: wrap; }
 .swatch { display: inline-block; width: .8em; height: .8em; border-radius: 2px; margin-right: .35em; vertical-align: -0.05em; }
+.key { display: inline-block; width: 1.6em; height: .7em; margin-right: .4em; vertical-align: 0.05em; }
+.key-dot { width: .8em; height: .8em; margin-right: .35em; vertical-align: -0.05em; }
 
 .hypotheses { padding-left: 1.1rem; margin: 1rem 0 0; }
 .hypotheses li { margin-bottom: .5rem; }
@@ -207,8 +209,8 @@ input[type="range"] { width: 100%; min-height: 28px; margin: 0; accent-color: va
   margin: .2rem 0; color: var(--band);
 }
 .readout-band { margin: 0; font-weight: 600; color: var(--band); }
-.scale { position: relative; height: 4.6rem; margin-top: .5rem; }
-.scale-track { position: absolute; top: 2.55rem; left: 0; right: 0; height: .7rem; border-radius: 999px; overflow: hidden; display: flex; }
+.scale { position: relative; height: 5.6rem; margin-top: .5rem; }
+.scale-track { position: absolute; top: 1.55rem; left: 0; right: 0; height: .7rem; border-radius: 999px; overflow: hidden; display: flex; }
 .scale-track span { height: 100%; }
 .scale-labels { position: absolute; left: 0; right: 0; bottom: 0; display: flex; font-size: .82rem; color: var(--ink-soft); }
 .scale-labels span:nth-child(1) { width: 40%; }
@@ -217,9 +219,11 @@ input[type="range"] { width: 100%; min-height: 28px; margin: 0; accent-color: va
   position: absolute; top: 0; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center;
   font-size: .78rem; font-weight: 700; line-height: 1; white-space: nowrap; transition: left .25s ease;
 }
-.marker::after { content: ""; width: 2px; height: 2.1rem; background: var(--ink); margin-top: .2rem; }
-.marker.lr { top: 1.05rem; }
-.marker.lr::after { height: 1.05rem; }
+/* Random Forest is marked above the scale and Logistic Regression below it, so the two labels
+   stay readable even when both models give the same estimate. */
+.marker::after { content: ""; width: 2px; height: 1.25rem; background: var(--ink); margin-top: .2rem; }
+.marker.lr { top: 1.55rem; flex-direction: column-reverse; }
+.marker.lr::after { margin: 0 0 .2rem; }
 .drivers { font-size: .95rem; color: var(--ink-soft); }
 
 .findings-list { padding-left: 1.2rem; margin: 0 0 1.5rem; }
