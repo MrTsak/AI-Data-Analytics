@@ -5,9 +5,10 @@ import { t, pick, pct, num, modelName, featureLabel, isGreek } from './i18n.js';
 
 const MODEL_NAMES = ['Random Forest', 'Logistic Regression'];
 const FILES = ['summary', 'explore', 'clusters', 'models', 'model_lr', 'model_rf', 'form'];
+// Background from published sources, shown apart from this dataset's own results.
 const HYPOTHESES = [
   ['Higher HbA1c goes with higher diabetes risk', 'https://pmc.ncbi.nlm.nih.gov/articles/PMC4933534/'],
-  ['BMI is positively related to diabetes risk', 'https://www.escardio.org/The-ESC/Press-Office/Press-releases/Body-mass-index-is-a-more-powerful-risk-factor-for-diabetes-than-genetics'],
+  ['Overweight and obesity are associated with a higher risk of type 2 diabetes', 'https://www.niddk.nih.gov/health-information/diabetes/overview/risk-factors-type-2-diabetes'],
   ['Risk rises with age', 'https://www.thelancet.com/journals/lanhl/article/PIIS2666-7568(21)00177-X/fulltext'],
   ['Blood glucose is strongly related to diabetes', 'https://pmc.ncbi.nlm.nih.gov/articles/PMC4484145/'],
 ];
