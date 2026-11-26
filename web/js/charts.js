@@ -55,11 +55,23 @@ const base = (c, width) => ({
 // Axis titles centred below the tick labels, so they never sit on top of the last tick.
 const xAxis = (label, extra = {}) => ({ label, labelAnchor: 'center', labelOffset: 38, ...extra });
 
+// Decimals shown for bin edges in histogram tooltips: enough that adjacent edges stay distinct
+// (bins are about 2.7 years, 2.9 BMI, 0.18 HbA1c and 7.3 mg/dL wide), no more.
+const EDGE_DIGITS = { age: 0, bmi: 1, HbA1c_level: 1, blood_glucose_level: 0 };
+
+// Fallback for other features: one decimal place finer than the bin width.
+const edgeDigits = (feat, edges) => {
+  if (feat in EDGE_DIGITS) return EDGE_DIGITS[feat];
+  const width = Math.abs(edges[1] - edges[0]);
+  return width > 0 ? Math.max(0, Math.ceil(-Math.log10(width))) : 0;
+};
+
 /** Overlaid histograms as % of each group. */
 export function histogram(h, feat, width) {
   const c = palette();
   const negTotal = h.neg.reduce((a, b) => a + b, 0);
   const posTotal = h.pos.reduce((a, b) => a + b, 0);
+  const digits = edgeDigits(feat, h.edges);
   const rows = [];
   h.neg.forEach((n, i) => {
     rows.push({ x1: h.edges[i], x2: h.edges[i + 1], y: (n / negTotal) * 100, group: 'No diabetes' });
@@ -78,7 +90,7 @@ export function histogram(h, feat, width) {
         fillOpacity: (d) => (d.group === 'Diabetes' ? 0.3 : 0.6),
         stroke: (d) => (d.group === 'Diabetes' ? c.pos : 'none'), strokeWidth: 1.5,
         tip: true,
-        title: (d) => `${t(d.group)}\n${d.x1}–${d.x2}: ${num(d.y, 1)}% ${pick('of group', 'της ομάδας')}` }),
+        title: (d) => `${t(d.group)}\n${num(d.x1, digits)}–${num(d.x2, digits)}: ${num(d.y, 1)}% ${pick('of group', 'της ομάδας')}` }),
       Plot.ruleY([0], { stroke: c.soft }),
     ],
   });

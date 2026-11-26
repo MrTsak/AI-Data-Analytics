@@ -170,3 +170,43 @@ test('histogram bars overlap from zero instead of stacking', { skip: !chromium &
     server.close();
   }
 });
+
+// Tooltips show bin edges rounded for the variable and in the page's number format, not raw
+// edges such as "77.336–80" with a decimal point on the Greek page.
+test('histogram tooltips format bin edges in the page language', { skip: !chromium && 'playwright not installed', timeout: 60000 }, async () => {
+  const server = await serve();
+  const browser = await chromium.launch();
+  try {
+    const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+    const tipFor = async (feat, edges) => {
+      await page.evaluate(async ({ feat, edges, prefix }) => {
+        const charts = await import(`${prefix}js/charts.js`);
+        document.getElementById('tip-probe')?.remove();
+        const plot = charts.histogram({ edges, neg: [20, 80], pos: [30, 70] }, feat, 600);
+        plot.id = 'tip-probe';
+        document.body.prepend(plot);
+      }, { feat, edges, prefix: PREFIX });
+      // Hover near the bottom of the first bin, where both groups' bars are drawn.
+      const box = await page.locator('#tip-probe rect').first().boundingBox();
+      await page.mouse.move(box.x + box.width / 2, box.y + box.height - 2);
+      const tip = page.locator('#tip-probe [aria-label="tip"]');
+      await tip.waitFor({ timeout: 5000 });
+      return (await tip.textContent()).replace(/\s+/g, ' ').trim();
+    };
+
+    const port = server.address().port;
+    await page.goto(`http://localhost:${port}${PREFIX}el/`, { waitUntil: 'networkidle' });
+    await page.waitForSelector('#explore-chart svg', { timeout: 10000 });
+    assert.match(await tipFor('HbA1c_level', [3.5, 3.683, 3.867]), /3,5–3,7: \d+,\d% της ομάδας/, 'Greek tooltip uses a decimal comma');
+    assert.match(await tipFor('age', [77.336, 80, 82.664]), /77–80: \d+,\d% της ομάδας/, 'age edges in whole years');
+
+    await page.goto(`http://localhost:${port}${PREFIX}`, { waitUntil: 'networkidle' });
+    await page.waitForSelector('#explore-chart svg', { timeout: 10000 });
+    assert.match(await tipFor('age', [77.336, 80, 82.664]), /77–80: \d+\.\d% of group/);
+    assert.match(await tipFor('blood_glucose_level', [153.333, 160.667, 168]), /153–161: \d+\.\d% of group/);
+    assert.match(await tipFor('bmi', [27.146, 30.002, 32.858]), /27\.1–30\.0: \d+\.\d% of group/);
+  } finally {
+    await browser.close();
+    server.close();
+  }
+});
