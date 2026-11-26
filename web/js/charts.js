@@ -71,7 +71,9 @@ export function histogram(h, feat, width) {
     y: { label: t('% of group'), grid: true },
     color: { domain: ['No diabetes', 'Diabetes'], range: [c.neg, c.pos] },
     marks: [
-      Plot.rectY(rows, { x1: 'x1', x2: 'x2', y: 'y', fill: 'group', inset: 0.5,
+      // Each group is a percentage of its own size, so the bars overlap from zero; stacking them
+      // would add two percentages with different denominators. y1/y2 turn off Plot's implicit stack.
+      Plot.rectY(rows, { x1: 'x1', x2: 'x2', y1: 0, y2: 'y', fill: 'group', insetLeft: 0.5, insetRight: 0.5,
         // Two cues besides colour: "No diabetes" is a solid bar, "Diabetes" an outlined, lighter one.
         fillOpacity: (d) => (d.group === 'Diabetes' ? 0.3 : 0.6),
         stroke: (d) => (d.group === 'Diabetes' ? c.pos : 'none'), strokeWidth: 1.5,
