@@ -1,6 +1,6 @@
-# Diabetes Risk Explorer
+# Diabetes Data Analysis
 
-Explore 100,000 health records, compare two machine-learning models, and try a live diabetes-risk estimate in your browser.
+An educational machine-learning project with an initial set of 100,000 records: explore the data, compare two models and see how their estimates change, in your browser.
 
 **Live demo:** [tsakioan.com/projects/diabetes](https://tsakioan.com/projects/diabetes/) · Greek version: [tsakioan.com/projects/diabetes/el](https://tsakioan.com/projects/diabetes/el/)
 
@@ -8,40 +8,40 @@ The Greek page (`web/el/index.html`) is a hand-written translation of `web/index
 
 ![Dashboard hero](docs/screenshots/hero.png)
 
-> **Educational project — not a medical device or diagnosis.** The results describe this dataset only and are not clinically validated.
+> **Educational machine-learning project. Not intended for medical use or diagnosis.** The results describe this dataset only and are not clinically validated. The model estimates do not measure anyone's actual personal risk of diabetes.
 
 The project started as a CustomTkinter desktop app for a Gatehouse Awards qualification. It has since been rebuilt with a shared, tested Python pipeline and an interactive web version that runs entirely in the browser.
 
 ## What it does
 
-- **Explore the data.** Compare the distributions of HbA1c, blood glucose, BMI and age for patients with and without diabetes, plus diabetes rates by gender, smoking history, hypertension and heart disease. A correlation heatmap and four research hypotheses with sources sit alongside.
-- **Find patient groups.** K-means clustering on age, BMI and HbA1c finds three groups. Each group's description is generated from its actual centre and diabetes rate.
+- **Explore the data.** Compare the distributions of HbA1c, blood glucose, BMI and age for records with and without diabetes, plus the share of records with diabetes by gender, smoking history, hypertension and heart disease. A correlation heatmap and four research hypotheses with sources sit alongside.
+- **Group the records.** K-means clustering on age, BMI and HbA1c splits the records into three groups without using the diabetes outcome. Each group is then described by its actual centre and its proportion of records with diabetes.
 - **Compare models.** A Random Forest and a Logistic Regression are compared on ROC-AUC, recall, precision, F1 and accuracy, with ROC curves, confusion matrices and feature importance.
-- **Try it live.** Move sliders for gender, age, BMI, HbA1c, glucose, hypertension, heart disease and smoking history. Both models update instantly, client-side; nothing is sent anywhere.
+- **Explore model predictions.** Change gender, age, BMI, HbA1c, glucose, hypertension, heart disease and smoking history, and both models' estimates update instantly in the browser; nothing is sent anywhere.
 
 | Predictor | Model comparison |
 |---|---|
-| ![Live predictor](docs/screenshots/predictor.png) | ![Model comparison](docs/screenshots/models.png) |
+| ![Model predictions](docs/screenshots/predictor.png) | ![Model comparison](docs/screenshots/models.png) |
 
 | Dark mode | Phone |
 |---|---|
-| ![Explore section in dark mode](docs/screenshots/explore-dark.png) | ![Predictor on a phone](docs/screenshots/phone.png) |
+| ![Explore section in dark mode](docs/screenshots/explore-dark.png) | ![Model predictions on a phone](docs/screenshots/phone.png) |
 
 ## Results
 
-On a held-out test set of 19,226 patients (stratified 80/20 split):
+On a held-out test set of 19,226 records (stratified 80/20 split):
 
 | Metric | Random Forest | Logistic Regression |
 |---|---|---|
 | ROC-AUC | **0.963** | 0.960 |
-| Recall (share of diabetic patients found) | 0.680 | **0.636** |
-| Precision (share of flagged patients who are diabetic) | **1.000** | 0.860 |
+| Recall (share of records with diabetes found) | 0.680 | **0.636** |
+| Precision (share of positive predictions that have diabetes) | **1.000** | 0.860 |
 | F1 | **0.809** | 0.731 |
 | Accuracy | **0.972** | 0.959 |
 
-The best model is chosen by ROC-AUC, not accuracy, because only 8.8% of patients are diabetic. The Random Forest ranks patients slightly better (0.963 against 0.960), but it is a conservative detector: it flags a patient only when it is confident. In the test set it made no false alarms, yet it missed 543 of the 1,696 diabetic patients. The Logistic Regression found more of them (64%) at the cost of 176 false alarms. Neither model is suitable for screening, and the results describe this dataset only.
+The best model is chosen by ROC-AUC, not accuracy, because only 8.8% of the records have diabetes. The Random Forest ranks records slightly better (0.963 against 0.960), but it is a conservative detector: it classifies a record as positive only when it is confident. In the test set it made no false positives, yet it missed 543 of the 1,696 records with diabetes. The Logistic Regression found more of them (64%) at the cost of 176 false positives. Neither model is suitable for medical screening, and the results describe this dataset only.
 
-Both models are trained without class weights, so their probabilities are already on the dataset's own scale (on simulated data with a known 6% risk, the average prediction matched the observed rate). Bands are relative to the 8.8% rate (Moderate from 2×, High from 5×). The estimator is for comparing how inputs move the estimate, not for reading off anyone's actual risk. HbA1c and blood glucose carry most of the predictive signal.
+Both models are trained without class weights, so their probabilities are already on the dataset's own scale (on simulated data with a known 6% risk, the average prediction matched the observed rate). The Low/Moderate/High model estimate bands are relative to the 8.8% rate (Moderate from 2×, High from 5×). The model predictions section is for comparing how inputs move each model's estimate, not for reading off anyone's actual risk. HbA1c and blood glucose carry most of the predictive signal.
 
 ## Dataset
 
@@ -54,7 +54,7 @@ To run the analysis or the tests:
 1. Open the [Diabetes Prediction Dataset by iammustafatz on Kaggle](https://www.kaggle.com/datasets/iammustafatz/diabetes-prediction-dataset) and read its licence terms.
 2. Download the CSV file and save it in this repository as `data/sample.csv`. The file stays on your machine and is ignored by git.
 
-The published results in `web/data/` are summaries and models trained on the data. They contain no individual records: the cluster chart counts groups of at least 5 patients, and the browser parity test uses synthetic inputs.
+The published results in `web/data/` are summaries and models trained on the data. They contain no individual records: the cluster chart counts groups of at least 5 records, and the browser parity test uses synthetic inputs.
 
 ## Data preparation
 
@@ -143,7 +143,7 @@ xvfb-run -a python -m pytest tests     # include desktop tests on a headless Lin
 node --test tests/js/*.test.mjs        # JS/Python parity + browser smoke test (Playwright)
 ```
 
-The smoke test serves `web/` under `/projects/diabetes/`, checks that every chart renders, and checks that the predictor responds to input.
+The smoke test serves `web/` under `/projects/diabetes/`, checks that every chart renders, and checks that the model estimates respond to input.
 
 ## Licence
 
